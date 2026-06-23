@@ -11,8 +11,7 @@
 
 \begin{document}
 
-\title{Inteligencia Artificial \\ \begin{Large}Informe Final: Problema Multi-Depot Vehicle Routing Problem with Time
-Windows (MDVRP-TW)\end{Large}}
+\title{Inteligencia Artificial \\ \begin{Large}Informe Final: Problema Multi-Depot Vehicle Routing Problem with Time Windows (MDVRP-TW)\end{Large}}
 \author{Domingo Ruiz-Tagle}
 \date{\today}
 \maketitle
@@ -287,7 +286,7 @@ Aqu\'i, el primer veh\'iculo de \texttt{D0} visita a los clientes \texttt{C3}, \
 
 \subsection{Costos y Decisiones de Dise\~no de la Representaci\'on}
 
-La elecci\'on de un n\'umero fijo de $k$ veh\'iculos por dep\'osito simplifica el c\'odigo de inserci\'on y evita la gesti\'on de memoria din\'amica de rutas, pero introduce un costo de espacio: si un dep\'osito recibe menos veh\'iculos \'utiles que $k$, los vectores vac\'ios persisten y se recorren igualmente en cada llamada a \texttt{calcular\_fo\_total}. En t\'erminos de memoria, la representaci\'on completa de una soluci\'on ocupa $O(m \cdot k + n)$ punteros, frente a los $O(n)$ que requerir\'ia una representaci\'on de permutaci\'on plana con separadores de ruta; el costo adicional se justifica porque la estructura matricial hace expl\'icita la pertenencia simult\'anea a un dep\'osito y a un veh\'iculo, evitando tener que parsear separadores cada vez que un operador necesita identificar la ruta de un nodo.
+La elecci\'on de un n\'umero fijo de $k$ veh\'iculos por dep\'osito (en lugar de una lista de tama\~no variable que crezca seg\'un demanda) simplifica el c\'odigo de inserci\'on y evita la gesti\'on de memoria din\'amica de rutas, pero introduce un costo de espacio: si un dep\'osito recibe menos veh\'iculos \'utiles que $k$, los vectores vac\'ios persisten y se recorren igualmente en cada llamada a \texttt{calcular\_fo\_total} (con un costo marginal, ya que un \texttt{continue} los descarta de inmediato, pero sin liberar la entrada del vector externo). En t\'erminos de memoria, la representaci\'on completa de una soluci\'on ocupa $O(m \cdot k + n)$ punteros, frente a los $O(n)$ que requerir\'ia una representaci\'on de permutaci\'on plana con separadores de ruta; el costo adicional se justifica porque la estructura matricial hace expl\'icita la pertenencia simult\'anea a un dep\'osito y a un veh\'iculo, evitando tener que parsear separadores cada vez que un operador necesita identificar la ruta de un nodo.
 
 Finalmente, cabe notar que esta representaci\'on no almacena de forma persistente ni la distancia acumulada ni el tiempo de llegada a cada nodo: ambos se recomputan \'integramente, desde el dep\'osito, cada vez que se invoca \texttt{evaluar\_ruta} sobre una ruta. Esta decisi\'on de dise\~no -- mantener la representaci\'on de la soluci\'on libre de cach\'e de evaluaci\'on -- es la ra\'iz del problema de escalabilidad que se discute en la Secci\'on~6 y en las Conclusiones: cualquier operador de vecindad, sin importar cu\'an local sea el cambio que introduce, fuerza una reevaluaci\'on completa de la ruta afectada.
 
@@ -326,35 +325,33 @@ La optimizaci\'on aplica un esquema de \textit{Hill Climbing} (HC) determinista 
 \Delta(i,j) = \text{FO}_{\text{ruta}}(\text{vec\_ruta}) - \text{FO}_{\text{ruta}}(\text{ruta original}).
 \]
 
-A diferencia de una búsqueda \textit{First Improvement}, el algoritmo \textbf{no aplica el primer movimiento que mejora}. En su lugar, conserva el mínimo global de $\Delta$ entre absolutamente todas las rutas, depósitos y posiciones evaluadas en esa iteración. Solo entonces ejecuta el movimiento con mayor reducción, aplicando una estrategia \textbf{Best Improvement} a nivel de solución completa.
+A diferencia de una b\'usqueda \textit{First Improvement}, el algoritmo \textbf{no aplica el primer movimiento que mejora}. En su lugar, conserva el m\'inimo global de $\Delta$ entre absolutamente todas las rutas, dep\'ositos y posiciones evaluadas en esa iteraci\'on. Solo entonces ejecuta el movimiento con mayor reducci\'on, aplicando una estrategia \textbf{Best Improvement} a nivel de soluci\'on completa.
 
 Este ciclo se repite hasta cumplir uno de dos criterios de parada:
 \begin{itemize}
-    \item Ninguna perturbación produce un $\Delta < -10^{-4}$.
-    \item Se alcanza el límite estricto de 1000 iteraciones.
+    \item Ninguna perturbaci\'on produce un $\Delta < -10^{-4}$.
+    \item Se alcanza el l\'imite estricto de 1000 iteraciones.
 \end{itemize}
 
-Es fundamental notar una asimetría estructural en la evaluación de los operadores intra-ruta:
+Es fundamental notar una asimetr\'ia estructural en la evaluaci\'on de los operadores intra-ruta:
 \begin{itemize}
-    \item \texttt{RELOCATE}: Evalúa todas las posiciones de inserción $j \neq i$, incluyendo aquellas anteriores a $i$.
-    \item \texttt{SWAP} y \texttt{2-OPT}: Solo consideran pares con $j > i$. Dado que intercambiar $(i,j)$ es equivalente a $(j,i)$, y revertir el segmento $[i,j]$ es idéntico a hacerlo en sentido contrario, esta restricción evita evaluar movimientos simétricamente redundantes sin perder cobertura de la vecindad.
+    \item \texttt{RELOCATE}: Eval\'ua todas las posiciones de inserci\'on $j \neq i$, incluyendo aquellas anteriores a $i$.
+    \item \texttt{SWAP} y \texttt{2-OPT}: Solo consideran pares con $j > i$. Dado que intercambiar $(i,j)$ es equivalente a $(j,i)$, y revertir el segmento $[i,j]$ es id\'entico a hacerlo en sentido contrario, esta restricci\'on evita evaluar movimientos sim\'etricamente redundantes sin perder cobertura de la vecindad.
 \end{itemize}
 
-\subsubsection*{Relocate Inter-Ruta}
-
-Tras alcanzar la convergencia del Hill Climbing intra-ruta, se invoca repetidamente la función \texttt{relocate\_inter\_ruta} mediante un patrón \texttt{while}. A diferencia de los operadores descritos en la Sección 6.4, esta función evalúa en una sola pasada el impacto de mover clientes entre distintas rutas. Para cada cliente $i$, evalúa:
+\textbf{Relocate Inter-Ruta.} Tras alcanzar la convergencia del Hill Climbing intra-ruta, se invoca repetidamente la funci\'on \texttt{relocate\_inter\_ruta} mediante un patr\'on \texttt{while}. A diferencia de los operadores descritos en la Secci\'on 6.4, esta funci\'on eval\'ua en una sola pasada el impacto de mover clientes entre distintas rutas. Para cada cliente $i$, eval\'ua:
 
 \begin{enumerate}
-    \item \textbf{Costo de remoción ($g$):} La ganancia obtenida al extraer al cliente $i$ de su ruta de origen $(d_1, v_1)$.
+    \item \textbf{Costo de remoci\'on ($g$):} La ganancia obtenida al extraer al cliente $i$ de su ruta de origen $(d_1, v_1)$.
     $$g = \text{FO}(\text{ruta}_1) - \text{FO}(\text{ruta}_1 \setminus \{i\})$$
     
-    \item \textbf{Costo de inserción ($c$):} El costo de añadir al cliente $i$ en cada posición $j$ de cualquier otra ruta $(d_2, v_2)$ del sistema, incluyendo depósitos distintos.
+    \item \textbf{Costo de inserci\'on ($c$):} El costo de a\~nadir al cliente $i$ en cada posici\'on $j$ de cualquier otra ruta $(d_2, v_2)$ del sistema, incluyendo dep\'ositos distintos.
     $$c = \text{FO}(\text{ruta}_2 \cup \{i\}) - \text{FO}(\text{ruta}_2)$$
 \end{enumerate}
 
-El movimiento global se acepta estrictamente si representa una mejora, es decir, si $\delta = c - g < 0$. De todas las combinaciones $(i, d_1, v_1, j, d_2, v_2)$ evaluadas en la vecindad, se ejecuta únicamente la de menor $\delta$. Si ninguna combinación logra mejorar la solución, la función retorna \texttt{false} y el ciclo principal se detiene.
+El movimiento global se acepta estrictamente si representa una mejora, es decir, si $\delta = c - g < 0$. De todas las combinaciones $(i, d_1, v_1, j, d_2, v_2)$ evaluadas en la vecindad, se ejecuta \'unicamente la de menor $\delta$. Si ninguna combinaci\'on logra mejorar la soluci\'on, la funci\'on retorna \texttt{false} y el ciclo principal se detiene.
 
-En la práctica, este operador es el único mecanismo capaz de mover clientes \textbf{entre depósitos distintos}. Esto lo convierte en el verdadero motor para resolver la dimensión ``multi-depósito'' del problema, superando las limitaciones de los operadores intra-ruta, los cuales operan dentro de una única ruta y son ciegos a la asignación cliente-depósito.
+En la pr\'actica, este operador es el \'unico mecanismo capaz de mover clientes \textbf{entre dep\'ositos distintos}. Esto lo convierte en el verdadero motor para resolver la dimensi\'on ``multi-dep\'osito'' del problema, superando las limitaciones de los operadores intra-ruta, los cuales operan dentro de una \'unica ruta y son ciegos a la asignaci\'on cliente-dep\'osito.
 
 \subsection{Funci\'on de Evaluaci\'on con Gradiente Proporcional}
 
@@ -378,15 +375,15 @@ El modelo implementa tres operadores topol\'ogicos, evaluados de manera independ
 \item \textbf{2-Opt ($O(N^2)$):} Invierte el subsegmento comprendido entre dos nodos. Fundamental para eliminar cruces geom\'etricos en instancias con alta densidad espacial, aunque al revertir un segmento completo invierte tambi\'en el orden temporal relativo de todos los clientes intermedios, lo que puede introducir nuevas violaciones de ventana de tiempo si el segmento no era sim\'etrico en sus urgencias.
 \end{itemize}
 
-Cada evaluación de movimiento, independientemente del operador seleccionado, exige clonar la ruta completa (\texttt{vector<Node*> vec\_ruta = ruta;}) y recalcular desde cero su distancia y tiempo respecto al depósito mediante la función \texttt{evaluar\_ruta}. Este enfoque ingenuo define la complejidad del proceso:
+Cada evaluaci\'on de movimiento, independientemente del operador seleccionado, exige clonar la ruta completa (\texttt{vector<Node*> vec\_ruta = ruta;}) y recalcular desde cero su distancia y tiempo respecto al dep\'osito mediante la funci\'on \texttt{evaluar\_ruta}. Este enfoque ingenuo define la complejidad del proceso:
 
 \begin{itemize}
-    \item \textbf{Costo por evaluación:} $O(N)$, debido a la necesidad de recorrer todos los nodos de la ruta para recalcular la función objetivo.
-    \item \textbf{Espacio de búsqueda:} $O(N^2)$, correspondiente a la cantidad de pares $(i,j)$ evaluables por cada ruta.
-    \item \textbf{Costo por iteración:} $O(N^3)$, resultante de explorar la vecindad completa de \textbf{una} sola ruta en un paso del Hill Climbing.
+    \item \textbf{Costo por evaluaci\'on:} $O(N)$, debido a la necesidad de recorrer todos los nodos de la ruta para recalcular la funci\'on objetivo.
+    \item \textbf{Espacio de b\'usqueda:} $O(N^2)$, correspondiente a la cantidad de pares $(i,j)$ evaluables por cada ruta.
+    \item \textbf{Costo por iteraci\'on:} $O(N^3)$, resultante de explorar la vecindad completa de \textbf{una} sola ruta en un paso del Hill Climbing.
 \end{itemize}
 
-Al sumar este costo sobre todas las rutas y depósitos, y repetirlo hasta alcanzar la convergencia, se genera un evidente \textbf{cuello de botella algorítmico}. Este impacto crítico en el rendimiento se cuantifica en la Sección 8 y se discute como la principal limitación estructural en las Conclusiones.
+Al sumar este costo sobre todas las rutas y dep\'ositos, y repetirlo hasta alcanzar la convergencia, se genera un evidente \textbf{cuello de botella algor\'itmico}. Este impacto cr\'itico en el rendimiento se cuantifica en la Secci\'on 8 y se discute como la principal limitaci\'on estructural en las Conclusiones.
 
 % =========================================================
 \section{Experimentos}
@@ -430,14 +427,14 @@ Dada la naturaleza determinista del \textit{Hill Climbing} implementado -- no ex
 
 \subsection{Protocolo Experimental}
 
-El protocolo consistió en las siguientes etapas secuenciales:
+El protocolo consisti\'o en las siguientes etapas secuenciales:
 
 \begin{enumerate}
-    \item Generar una solución constructiva única por instancia mediante la función \texttt{generar\_solucion\_inicial\_greedy}.
-    \item Clonar dicha solución tres veces para garantizar puntos de partida idénticos en las optimizaciones posteriores.
-    \item Someter cada clon, de forma independiente, a la función \texttt{optimizar\_hc} con el operador correspondiente (Swap, Relocate o 2-Opt) hasta alcanzar su convergencia intra-ruta.
-    \item Ejecutar el ciclo de mejora \texttt{while (relocate\_inter\_ruta(...))} sobre cada clon, iterando hasta que no existan movimientos inter-ruta que favorezcan la función objetivo.
-    \item Registrar el valor final de la FO, la distancia total, las violaciones acumuladas y el tiempo de cómputo. Finalmente, exportar el detalle completo de cada ruta y sus penalizaciones a un archivo de texto independiente (\texttt{outputs/salida\_\{operador\}\_\{instancia\}.txt}).
+    \item Generar una soluci\'on constructiva \'unica por instancia mediante la funci\'on \texttt{generar\_solucion\_inicial\_greedy}.
+    \item Clonar dicha soluci\'on tres veces para garantizar puntos de partida id\'enticos en las optimizaciones posteriores.
+    \item Someter cada clon, de forma independiente, a la funci\'on \texttt{optimizar\_hc} con el operador correspondiente (Swap, Relocate o 2-Opt) hasta alcanzar su convergencia intra-ruta.
+    \item Ejecutar el ciclo de mejora \texttt{while (relocate\_inter\_ruta(...))} sobre cada clon, iterando hasta que no existan movimientos inter-ruta que favorezcan la funci\'on objetivo.
+    \item Registrar el valor final de la FO, la distancia total, las violaciones acumuladas y el tiempo de c\'omputo. Finalmente, exportar el detalle completo de cada ruta y sus penalizaciones a un archivo de texto independiente (\texttt{outputs/salida\_\{operador\}\_\{instancia\}.txt}).
 \end{enumerate}
 
 % =========================================================
@@ -507,22 +504,32 @@ La resoluci\'on del MDVRP-TW a trav\'es de una arquitectura \textit{Hill Climbin
 
 El an\'alisis topol\'ogico demuestra que el comportamiento geom\'etrico de las redes log\'isticas dicta el rendimiento del operador heur\'istico. En ecosistemas aleatorios con amplios m\'argenes de operaci\'on, las t\'ecnicas de reubicaci\'on agresiva (Relocate) dominan la optimizaci\'on de trayectorias. Por el contrario, en escenarios aglomerados, la rigidez de las ventanas temporales provoca que la b\'usqueda local sea absorbida r\'apidamente por sumideros locales, requiriendo operadores inter-ruta como \'unica v\'ia de escape topol\'ogica.
 
-Desde un punto de vista cr\'itico y anal\'itico, es imperativo se\~nalar que el \'exito operativo en tiempos de $\approx 0.00$s es consecuencia directa de la reducci\'on dimensional del grafo ($N=25$) y de las capacidades del hardware actual. El dise\~no algor\'itmico presente carece de una implementaci\'on de Evaluaci\'on Delta. Actualmente, cada perturbaci\'on clona la ruta en memoria y recalcula las distancias desde el dep\'osito en $O(N)$, elevando la exploraci\'on del vecindario a un costo t\'ecnico de $O(N^3)$. A nivel de escala industrial, con redes log\'isticas de 500 o 1000 nodos, este enfoque es computacionalmente inviable.
+Desde un punto de vista cr\'itico y anal\'itico, es imperativo se\~nalar que el \'exito operativo en tiempos de $\approx 0.00$s es consecuencia directa de la reducci\'on dimensional del grafo ($N=25$) y de las capacidades del hardware actual. Actualmente, cada perturbaci\'on clona la ruta en memoria y recalcula las distancias desde el dep\'osito en $O(N)$, elevando la exploraci\'on del vecindario a un costo t\'ecnico de $O(N^3)$. A nivel de escala industrial, con redes log\'isticas de 500 o 1000 nodos, este enfoque es computacionalmente inviable.
 
-En conclusi\'on, si bien el modelo desarrollado cumple exitosamente con los requisitos funcionales del VRPTW, el pr\'oximo hito tecnol\'ogico para garantizar la escalabilidad industrial debe ser obligatoriamente la transici\'on matem\'atica hacia evaluaciones de impacto local ($\Delta_{movimiento}$) en tiempo constante $O(1)$.
+En conclusi\'on, si bien el modelo desarrollado cumple exitosamente con los requisitos funcionales del VRPTW, el pr\'oximo hito tecnol\'ogico para garantizar la escalabilidad industrial debe ser obligatoriamente la transici\'on matem\'atica hacia evaluaciones de impacto local en tiempo constante $O(1)$.
 
 \section{Uso LLMs}
 
 \begin{enumerate}
-\item \textbf{Herramienta utilizada:} Gemini (Modelo Gemini 2.0 Flash), plan Paid/Pro.
-\item \textbf{Prop\'osito de uso:} B\'usqueda y localizaci\'on de material bibliogr\'afico dif\'icil de hallar, traducci\'on t\'ecnica de \textit{abstracts}, correcci\'on de estilo para evitar plagio y asistencia en el formato de c\'odigo LaTeX.
-\item \textbf{Prompts relevantes:}
+\item \textbf{Herramientas utilizadas:}
 \begin{itemize}
-\item ``Mi ayudante gu\'ia me dio esta referencia recomendada, pero no puedo encontrarla, ?`existe alguna p\'agina para hallarla?''
-\item ``?`C\'omo cito esto si es el abstract de un paper de 1959?''
-\item ``Ayuda con la escritura de f\'ormulas matem\'aticas de lenguaje matem\'atico a LaTeX.''.
+\item Gemini 2.0 Flash (plan Pro).
+\item Claude Sonnet.
 \end{itemize}
-\item \textbf{Intervenci\'on:} El modelo proporcion\'o los datos faltantes de las referencias (volumen, n\'umero, p\'aginas) y sugiri\'o estructuras de p\'arrafos. Se utiliz\'o la IA como un colaborador para agilizar la b\'usqueda de informaci\'on y resolver errores de compilaci\'on de \textit{Latexmk}. Traducci\'on de modelos matem\'aticos desde lenguaje natural y descripciones t\'ecnicas a sintaxis de \textit{LaTeX}.
+
+\item \textbf{Prop\'osito de uso:}
+\begin{itemize}
+\item B\'usqueda y localizaci\'on de bibliograf\'ia.
+\item Traducci\'on y comprensi\'on de abstracts en ingl\'es.
+\item Correcci\'on de redacci\'on y estilo acad\'emico.
+\item Asistencia en la escritura de expresiones matem\'aticas en LaTeX.
+\item Apoyo en la implementaci\'on de partes del c\'odigo y depuraci\'on de errores.
+\item Apoyo en el an\'alisis e interpretaci\'on de resultados experimentales.
+\item Resoluci\'on de problemas relacionados con compilaci\'on y formato del informe.
+\end{itemize}
+
+\item \textbf{Intervenci\'on:}
+Las herramientas de IA fueron utilizadas como apoyo para la b\'usqueda bibliogr\'afica, correcci\'on de redacci\'on, asistencia en LaTeX y comprensi\'on de art\'iculos cient\'ificos. Adem\'as, se utilizaron para discutir alternativas de implementaci\'on, corregir errores de programaci\'on y obtener retroalimentaci\'on sobre el an\'alisis de los resultados experimentales. La integraci\'on final del c\'odigo, la ejecuci\'on de los experimentos y la elaboraci\'on de las conclusiones fueron realizadas por el estudiante.
 \item \textbf{Validaci\'on:} Toda la informaci\'on entregada por la IA fue contrastada directamente con la base de datos de \textit{IEEE Xplore} y la \textit{Biblioteca Digital UTFSM}. Las f\'ormulas y conceptos NP-Hard fueron validados con los apuntes de la asignatura y la bibliograf\'ia oficial del curso.
 \end{enumerate}
 
