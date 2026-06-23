@@ -35,8 +35,8 @@ struct EvalResult {
     double dist;
     double tiempo;
     double carga;
-    double tardanza_total;  // FIX 2: suma de magnitudes de tardanza
-    double exceso_carga;    // FIX 2: exceso de capacidad total
+    double tardanza_total;
+    double exceso_carga;
     vector<Penalty> penalizaciones;
 };
 
@@ -60,7 +60,7 @@ EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double 
             res.tiempo = cliente->e_i;
         } else if (llegada > cliente->l_i) {
             double tardanza = llegada - cliente->l_i;
-            res.tardanza_total += tardanza;  // FIX 2: acumular magnitud
+            res.tardanza_total += tardanza;
             Penalty p = {cliente->id, llegada, cliente->e_i, cliente->l_i, tardanza, 0.0, false};
             res.penalizaciones.push_back(p);
             res.tiempo = llegada;
@@ -78,7 +78,7 @@ EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double 
     res.tiempo += (dist_retorno / v);
     
     if (res.carga > capacidad) {
-        res.exceso_carga = res.carga - capacidad;  // FIX 2: acumular magnitud
+        res.exceso_carga = res.carga - capacidad;
         Penalty p = {"CAPACIDAD", 0.0, 0.0, 0.0, 0.0, res.exceso_carga, true};
         res.penalizaciones.push_back(p);
     }
@@ -86,7 +86,6 @@ EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double 
     return res;
 }
 
-// FIX 2: FO proporcional a la magnitud del error, no al numero de violaciones
 double calcular_fo_ruta(const EvalResult& eval) {
     return eval.dist + eval.tardanza_total * 100.0 + eval.exceso_carga * 500.0;
 }
@@ -155,9 +154,6 @@ void leer_instancia(const string& ruta_archivo, vector<Node*>& depots, vector<No
     file.close();
 }
 
-// ============================================================
-// FIX 1 + FIX 2: Greedy que valida ventanas de tiempo al insertar
-// ============================================================
 Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vector<Node*>& clientes, int num_vehiculos, double capacidad) {
     vector<Node*> clientes_ordenados = clientes;
 
@@ -168,7 +164,6 @@ Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vect
         return min_d;
     };
 
-    // Score combinado: urgencia temporal + proximidad geografica
     sort(clientes_ordenados.begin(), clientes_ordenados.end(), [&](const Node* a, const Node* b) {
         double score_a = a->l_i - 0.5 * dist_min_depot(a);
         double score_b = b->l_i - 0.5 * dist_min_depot(b);
@@ -186,7 +181,6 @@ Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vect
     for (Node* cliente : clientes_ordenados) {
         bool asignado = false;
 
-        // FIX 1: Intentar insertar solo en rutas sin violacion de ventana de tiempo
         for (const Node* d : depots) {
             if (asignado) break;
             for (int v = 0; v < num_vehiculos; ++v) {
@@ -196,7 +190,6 @@ Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vect
                 ruta_test.push_back(cliente);
                 EvalResult eval_test = evaluar_ruta(ruta_test, d, capacidad);
 
-                // Solo insertar si no genera tardanza nueva
                 bool sin_tardanza = (eval_test.tardanza_total == 0.0);
                 if (sin_tardanza) {
                     solucion[d->id][v].push_back(cliente);
@@ -207,7 +200,6 @@ Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vect
             }
         }
 
-        // FIX 1: Fallback — si no hay ruta factible, insertar en la de menor FO adicional
         if (!asignado) {
             double mejor_fo = 1e18;
             string mejor_d_id;
@@ -293,7 +285,6 @@ void escribir_solucion(const string& ruta_salida, int semilla, double tiempo_com
         }
     }
 
-    // FIX 2: FO del archivo de salida tambien usa penalizacion proporcional
     double tardanza_total_global = 0.0;
     double exceso_total_global = 0.0;
     for (const Node* d : depots) {
@@ -332,7 +323,6 @@ enum TipoMovimiento { SWAP, RELOCATE, DOS_OPT };
 void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Node*>& depots, double capacidad, TipoMovimiento mov) {
     fo_actual = calcular_fo_total(solucion_actual, depots, capacidad);
     bool mejora = true;
-    // FIX 3: Limite aumentado a 1000 para no cortar mejoras legitimas
     int iteraciones = 0;
 
     while (mejora && iteraciones < 1000) {
@@ -350,7 +340,7 @@ void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Nod
                 if (ruta.size() < 2) continue;
 
                 EvalResult eval_orig = evaluar_ruta(ruta, d, capacidad);
-                double fo_ruta_orig = calcular_fo_ruta(eval_orig);  // FIX 2
+                double fo_ruta_orig = calcular_fo_ruta(eval_orig);
 
                 for (size_t i = 0; i < ruta.size(); ++i) {
                     size_t j_start = (mov == RELOCATE) ? 0 : i + 1;
@@ -363,7 +353,6 @@ void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Nod
                         if (mov == SWAP) {
                             swap(vec_ruta[i], vec_ruta[j]);
                         } else if (mov == RELOCATE) {
-                            // FIX 1 original: ajustar indice tras erase
                             Node* nodo = vec_ruta[i];
                             vec_ruta.erase(vec_ruta.begin() + i);
                             size_t insert_pos = (j > i) ? j - 1 : j;
@@ -373,7 +362,7 @@ void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Nod
                         }
 
                         EvalResult eval_vecino = evaluar_ruta(vec_ruta, d, capacidad);
-                        double fo_ruta_vecino = calcular_fo_ruta(eval_vecino);  // FIX 2
+                        double fo_ruta_vecino = calcular_fo_ruta(eval_vecino);
 
                         double delta = fo_ruta_vecino - fo_ruta_orig;
 
@@ -409,13 +398,13 @@ bool relocate_inter_ruta(Solucion& solucion, double& fo_actual, const vector<Nod
             if (ruta1.size() < 2) continue;
 
             EvalResult eval1_orig = evaluar_ruta(ruta1, d1, capacidad);
-            double fo1_orig = calcular_fo_ruta(eval1_orig);  // FIX 2
+            double fo1_orig = calcular_fo_ruta(eval1_orig);
 
             for (int i = 0; i < (int)ruta1.size(); i++) {
                 vector<Node*> ruta1_sin = ruta1;
                 ruta1_sin.erase(ruta1_sin.begin() + i);
                 EvalResult eval1_sin = evaluar_ruta(ruta1_sin, d1, capacidad);
-                double fo1_sin = calcular_fo_ruta(eval1_sin);  // FIX 2
+                double fo1_sin = calcular_fo_ruta(eval1_sin);
                 double ganancia = fo1_orig - fo1_sin;
 
                 for (const Node* d2 : depots) {
@@ -425,13 +414,13 @@ bool relocate_inter_ruta(Solucion& solucion, double& fo_actual, const vector<Nod
 
                         auto& ruta2 = rutas2[v2];
                         EvalResult eval2_orig = evaluar_ruta(ruta2, d2, capacidad);
-                        double fo2_orig = calcular_fo_ruta(eval2_orig);  // FIX 2
+                        double fo2_orig = calcular_fo_ruta(eval2_orig);
 
                         for (int j = 0; j <= (int)ruta2.size(); j++) {
                             vector<Node*> ruta2_con = ruta2;
                             ruta2_con.insert(ruta2_con.begin() + j, ruta1[i]);
                             EvalResult eval2_con = evaluar_ruta(ruta2_con, d2, capacidad);
-                            double fo2_con = calcular_fo_ruta(eval2_con);  // FIX 2
+                            double fo2_con = calcular_fo_ruta(eval2_con);
                             double costo = fo2_con - fo2_orig;
 
                             double delta = costo - ganancia;
