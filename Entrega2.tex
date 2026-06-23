@@ -9,32 +9,31 @@
 \usepackage{array}
 \usepackage[top=3cm,bottom=3cm,left=3.5cm,right=3.5cm,footskip=1.5cm,headheight=1.5cm,margin=1in,headsep=0.5in,textheight=3cm]{geometry}
 
-
 \begin{document}
+
 \title{Inteligencia Artificial \\ \begin{Large}Informe Final: Problema Multi-Depot Vehicle Routing Problem with Time
 Windows (MDVRP-TW)\end{Large}}
 \author{Domingo Ruiz-Tagle}
 \date{\today}
 \maketitle
 
-
 %--------------------No borrar esta secci\'on--------------------------------%
 \section*{Evaluaci\'on}
-
 \begin{tabular}{ll}
-C\'odigo Fuente (10\%): &  \underline{\hspace{2cm}}\\
-Resumen (2\%):  & \underline{\hspace{2cm}} \\
-Introducci\'on (3\%):  & \underline{\hspace{2cm}} \\
-Representaci\'on (10\%):  & \underline{\hspace{2cm}} \\
-Descripci\'on del algoritmo (20\%):  & \underline{\hspace{2cm}} \\
-Experimentos (10\%):  & \underline{\hspace{2cm}} \\
-Resultados (30\%):  & \underline{\hspace{2cm}} \\
-Conclusiones (10\%): &  \underline{\hspace{2cm}}\\
+C\'odigo Fuente (10\%): & \underline{\hspace{2cm}}\\
+Resumen (2\%): & \underline{\hspace{2cm}} \\
+Introducci\'on (3\%): & \underline{\hspace{2cm}} \\
+Representaci\'on (10\%): & \underline{\hspace{2cm}} \\
+Descripci\'on del algoritmo (20\%): & \underline{\hspace{2cm}} \\
+Experimentos (10\%): & \underline{\hspace{2cm}} \\
+Resultados (30\%): & \underline{\hspace{2cm}} \\
+Conclusiones (10\%): & \underline{\hspace{2cm}}\\
 Bibliograf\'ia (5\%): & \underline{\hspace{2cm}}\\
- &  \\
-\textbf{Nota Final (100)}:   & \underline{\hspace{2cm}}
+& \\
+\textbf{Nota Final (100)}: & \underline{\hspace{2cm}}
 \end{tabular}
 %---------------------------------------------------------------------------%
+
 \vspace{2cm}
 
 \begin{abstract}
@@ -101,7 +100,6 @@ A lo largo de la evoluci\'on del problema, tres familias de m\'etodos han compet
 
 \begin{itemize}
 \item \textbf{M\'etodos Exactos:} Garantizan la optimalidad matem\'atica mediante t\'ecnicas como \textit{Branch-and-Bound} o programaci\'on entera mixta. Su ventaja es irrefutable en instancias peque\~nas: la soluci\'on obtenida es, por definici\'on, la mejor posible. Sin embargo, Toth y Vigo~\cite{toth2002bra} demuestran emp\'iricamente que su limitaci\'on es estructural e irresoluble: el tiempo de c\'omputo crece de forma exponencial con el tama\~no de la instancia, haci\'endolos inviables para problemas con m\'as de 100 nodos. En la pr\'actica log\'istica, donde una red de distribuci\'on puede involucrar cientos o miles de clientes, esta familia de m\'etodos queda relegada a la validaci\'on de soluciones en instancias reducidas o como cota inferior de referencia.
-
 \item \textbf{Heur\'isticas y Metaheur\'isticas:} Surgieron precisamente para superar esta barrera de escalabilidad. Br\"aysy y Gendreau~\cite{braysy2005meta} realizan una revisi\'on sistem\'atica de metaheur\'isticas aplicadas al VRPTW, concluyendo que algoritmos como B\'usqueda Tab\'u, Recocido Simulado y los Algoritmos Gen\'eticos (GA) logran soluciones de alta calidad en tiempos de c\'omputo acotados y polinomiales. No obstante, su an\'alisis expone la limitaci\'on cr\'itica compartida por esta familia: la sensibilidad param\'etrica. El rendimiento de estos algoritmos depende fuertemente de la calibraci\'on de hiperpar\'ametros, cuyo ajuste \'optimo var\'ia seg\'un la instancia. Zhang et al.~\cite{zhang2024application} corroboran esta debilidad en el contexto espec\'ifico de m\'ultiples veh\'iculos, confirmando que los GA presentan riesgo de convergencia prematura hacia \'optimos locales cuando los par\'ametros no est\'an correctamente ajustados.
 \end{itemize}
 
@@ -123,7 +121,6 @@ La frontera m\'as activa de la investigaci\'on contempor\'anea se articula en to
 
 \begin{itemize}
 \item \textbf{Dinamismo Operativo (DVRPTW):} Psaraftis et al.~\cite{psaraftis2016dynamic} documentan tres d\'ecadas de investigaci\'on, concluyendo que la informaci\'on que se revela en tiempo real durante la ejecuci\'on de las rutas (nuevos pedidos, cancelaciones, tr\'afico) invalida cualquier soluci\'on est\'atica. Los algoritmos de re-optimizaci\'on deben actualizar el plan de despacho en segundos, lo que impone restricciones de tiempo de c\'omputo incompatibles con la mayor\'ia de las metaheur\'isticas convencionales.
-
 \item \textbf{Sostenibilidad Energ\'etica (GVRP / EVRPTW):} Schneider et al.~\cite{schneider2014electric} formalizan el problema incorporando autonom\'ia limitada de bater\'ia y estaciones de recarga como nodos adicionales en el grafo. Montoya et al.~\cite{montoya2017electric} profundizan esta l\'inea al modelar funciones de carga no lineales, un aspecto cr\'itico que los modelos anteriores simplificaban incorrectamente. Esta no-linealidad transforma el subproblema de \textit{scheduling} de carga en un problema de control \'optimo. La limitaci\'on cr\'itica que persiste es que a\~nadir estaciones y tiempos de espera multiplica el espacio de b\'usqueda, exigiendo que las metaheur\'isticas de vanguardia sean redise\~nadas con operadores especializados para mantener la factibilidad energ\'etica.
 \end{itemize}
 
@@ -210,6 +207,8 @@ Finalmente, la restricci\'on (6) obliga a que los veh\'iculos comiencen y termin
 \section{Representaci\'on}
 % =========================================================
 
+\subsection{Estructura Primaria de la Soluci\'on}
+
 Una soluci\'on del MDVRP-TW se representa en la implementaci\'on computacional como un mapa hash que asocia cada dep\'osito a un conjunto de rutas:
 
 \[
@@ -222,29 +221,75 @@ donde cada $\text{Ruta}_j$ es un vector de punteros a nodos clientes, ordenados 
 typedef map<string, vector<vector<Node*>>> Solucion;
 \end{verbatim}
 
-La clave del mapa es el identificador alfanum\'erico del dep\'osito (por ejemplo, \texttt{"D0"}), y cada elemento del vector externo corresponde a un veh\'iculo asignado a ese centro. Un veh\'iculo sin clientes asignados se representa estructuralmente como un vector vac\'io; esto permite mantener la disponibilidad fija de $k$ veh\'iculos por dep\'osito sin necesidad de instanciar o destruir estructuras de memoria en tiempo de ejecuci\'on.
+La clave del mapa es el identificador alfanum\'erico del dep\'osito (por ejemplo, \texttt{"D0"}), y cada elemento del vector externo corresponde a un veh\'iculo asignado a ese centro. Un veh\'iculo sin clientes asignados se representa estructuralmente como un vector vac\'io; esto permite mantener la disponibilidad fija de $k$ veh\'iculos por dep\'osito sin necesidad de instanciar o destruir estructuras de memoria en tiempo de ejecuci\'on. Adem\'as, al usarse \texttt{std::map} y no \texttt{std::unordered\_map}, la iteraci\'on sobre los dep\'ositos (por ejemplo, en \texttt{calcular\_fo\_total}) se realiza siempre en orden lexicogr\'afico de su \texttt{id}, lo cual vuelve determinista cualquier recorrido completo de la soluci\'on a costa de un acceso $O(\log m)$ por clave en lugar de $O(1)$ amortizado.
 
 Cada nodo de la red l\'ogica se modela mediante la estructura \texttt{Node}, que centraliza los par\'ametros est\'aticos requeridos para la evaluaci\'on de factibilidad:
 
 \begin{verbatim}
 struct Node {
-    string id;
-    double x, y;      // coordenadas espaciales
-    double demand;    // carga requerida
-    double e_i, l_i;  // ventana temporal admisible
-    double s_i;       // tiempo de descarga/servicio
-    bool is_depot;    // flag l\'ogico de clasificaci\'on
+string id;
+double x, y; // coordenadas espaciales
+double demand; // carga requerida
+double e_i, l_i; // ventana temporal admisible
+double s_i; // tiempo de descarga/servicio
+bool is_depot; // flag l\'ogico de clasificaci\'on
 };
 \end{verbatim}
 
+Los nodos se instancian una \'unica vez en \texttt{leer\_instancia} y residen en el \textit{heap} durante toda la ejecuci\'on; nunca son copiados ni mutados, solo referenciados. Esto es relevante porque el protocolo experimental (Secci\'on~7) clona la soluci\'on inicial tres veces (\texttt{sol\_swap}, \texttt{sol\_relocate}, \texttt{sol\_2opt}) para que cada operador opere de forma independiente: como \texttt{Solucion} es un contenedor de \textbf{punteros}, clonarla copia \'unicamente las direcciones de memoria y no los datos de cada cliente, por lo que las tres copias son estructuralmente independientes (se pueden reordenar sin interferir entre s\'i) pero comparten los mismos objetos \texttt{Node} subyacentes como fuente de verdad.
+
 Las \textbf{variables de dominio din\'amicas} que determinan el estado de la soluci\'on son:
+
 \begin{itemize}
-    \item \textbf{Secuencia posicional:} El orden de los punteros \texttt{Node*} dentro del vector interno define impl\'icitamente la distancia de los arcos y la propagaci\'on del tiempo de viaje.
-    \item \textbf{Asignaci\'on de flota:} Determina en qu\'e sub-vector reside un cliente. La l\'ogica de ruteo exige que cada \texttt{Node*} exista exactamente en una coordenada de la matriz bidimensional.
-    \item \textbf{Acumulaci\'on de carga y tiempo:} Variables din\'amicas calculadas secuencialmente durante la funci\'on de evaluaci\'on para detectar excesos respecto al umbral $Q$ o tardanzas frente al l\'imite $l_i$.
+\item \textbf{Secuencia posicional:} El orden de los punteros \texttt{Node*} dentro del vector interno define impl\'icitamente la distancia de los arcos y la propagaci\'on del tiempo de viaje.
+\item \textbf{Asignaci\'on de flota:} Determina en qu\'e sub-vector reside un cliente. La l\'ogica de ruteo exige que cada \texttt{Node*} exista exactamente en una coordenada de la matriz bidimensional.
+\item \textbf{Acumulaci\'on de carga y tiempo:} Variables din\'amicas calculadas secuencialmente durante la funci\'on de evaluaci\'on para detectar excesos respecto al umbral $Q$ o tardanzas frente al l\'imite $l_i$.
 \end{itemize}
 
 Las perturbaciones geom\'etricas (movimientos de b\'usqueda local) operan manipulando \'unicamente el orden de los punteros en los vectores, manteniendo intacta la integridad de la estructura de datos matriz.
+
+\subsection{Representaci\'on Derivada: Evaluaci\'on y Penalizaciones}
+
+A diferencia de los componentes anteriores, que describen el \textit{estado} de la soluci\'on, el sistema mantiene una segunda capa de representaci\'on que describe la \textit{calidad} de ese estado. Esta capa se construye din\'amicamente cada vez que se invoca \texttt{evaluar\_ruta} y se materializa en dos estructuras auxiliares:
+
+\begin{verbatim}
+struct Penalty {
+string id;
+double llegada;
+double e_i, l_i;
+double tardanza;
+double exceso;
+bool is_capacity;
+};
+
+struct EvalResult {
+double dist;
+double tiempo;
+double carga;
+double tardanza_total;
+double exceso_carga;
+vector<Penalty> penalizaciones;
+};
+\end{verbatim}
+
+\texttt{EvalResult} es, en la pr\'actica, una \textbf{vista resumen} de una ruta: condensa la distancia recorrida, el reloj de simulaci\'on acumulado, la carga total y dos magnitudes de infactibilidad (\texttt{tardanza\_total} y \texttt{exceso\_carga}) que alimentan directamente la Funci\'on Objetivo (ecuaci\'on~7). El vector \texttt{penalizaciones} conserva, adem\'as, un registro nodo a nodo de \textit{qu\'e} cliente fall\'o y \textit{por cu\'anto}, lo que permite trazabilidad: el archivo de salida (\texttt{escribir\_solucion}) reutiliza esta misma estructura para reportar, al final de cada corrida, exactamente qu\'e clientes quedaron con tardanza o qu\'e ruta excedi\'o la capacidad, sin necesidad de recalcular nada. En otras palabras, la representaci\'on de la soluci\'on (\texttt{Solucion}) es deliberadamente \textit{est\'atica y minimalista} (solo orden y asignaci\'on), mientras que toda la sem\'antica de factibilidad se delega a una representaci\'on derivada que se recalcula bajo demanda en cada evaluaci\'on.
+
+\subsection{Ejemplo Ilustrativo}
+
+Para concretar la notaci\'on anterior, consid\'erese una instancia m\'inima con dos dep\'ositos (\texttt{D0}, \texttt{D1}) y dos veh\'iculos por dep\'osito ($k=2$). Tras la construcci\'on heur\'istica, el mapa \texttt{Solucion} podr\'ia adoptar el siguiente estado:
+
+\begin{verbatim}
+"D0" -> [ [C3, C7, C1], [] ]
+"D1" -> [ [C5], [C2, C9] ]
+\end{verbatim}
+
+Aqu\'i, el primer veh\'iculo de \texttt{D0} visita a los clientes \texttt{C3}, \texttt{C7} y \texttt{C1} en ese orden; el segundo veh\'iculo de \texttt{D0} no tiene clientes asignados (vector vac\'io, pero existente); y la flota de \texttt{D1} distribuye su carga entre un veh\'iculo con un solo cliente y otro con dos. Un movimiento \texttt{Swap} entre las posiciones 0 y 2 de la primera ruta de \texttt{D0} transformar\'ia la secuencia en \texttt{[C1, C7, C3]}; un \texttt{Relocate} podr\'ia mover \texttt{C5} desde \texttt{D1} hacia el veh\'iculo vac\'io de \texttt{D0} (esto corresponde, de hecho, al operador inter-ruta descrito en la Secci\'on~6.2, ya que cruza la frontera de dep\'osito).
+
+\subsection{Costos y Decisiones de Dise\~no de la Representaci\'on}
+
+La elecci\'on de un n\'umero fijo de $k$ veh\'iculos por dep\'osito (en lugar de una lista de tama\~no variable que crezca seg\'un demanda) simplifica el c\'odigo de inserci\'on y evita la gesti\'on de memoria din\'amica de rutas, pero introduce un costo de espacio: si un dep\'osito recibe menos veh\'iculos \'utiles que $k$, los vectores vac\'ios persisten y se recorren igualmente en cada llamada a \texttt{calcular\_fo\_total} (con un costo marginal, ya que un \texttt{continue} los descarta de inmediato, pero sin liberar la entrada del vector externo). En t\'erminos de memoria, la representaci\'on completa de una soluci\'on ocupa $O(m \cdot k + n)$ punteros, frente a los $O(n)$ que requerir\'ia una representaci\'on de permutaci\'on plana con separadores de ruta; el costo adicional se justifica porque la estructura matricial hace expl\'icita la pertenencia simult\'anea a un dep\'osito y a un veh\'iculo, evitando tener que parsear separadores cada vez que un operador necesita identificar la ruta de un nodo.
+
+Finalmente, cabe notar que esta representaci\'on no almacena de forma persistente ni la distancia acumulada ni el tiempo de llegada a cada nodo: ambos se recomputan \'integramente, desde el dep\'osito, cada vez que se invoca \texttt{evaluar\_ruta} sobre una ruta. Esta decisi\'on de dise\~no -- mantener la representaci\'on de la soluci\'on libre de cach\'e de evaluaci\'on -- es la ra\'iz del problema de escalabilidad que se discute en la Secci\'on~6 y en las Conclusiones: cualquier operador de vecindad, sin importar cu\'an local sea el cambio que introduce, fuerza una reevaluaci\'on completa de la ruta afectada.
 
 % =========================================================
 \section{Descripci\'on del Algoritmo}
@@ -252,17 +297,38 @@ Las perturbaciones geom\'etricas (movimientos de b\'usqueda local) operan manipu
 
 La resoluci\'on del problema se estructur\'o bajo un dise\~no en dos fases: una construcci\'on heur\'istica restrictiva que prioriza la factibilidad temporal, seguida de un proceso de explotaci\'on local intensiva (\textit{Hill Climbing}) basado en gradientes de penalizaci\'on.
 
-\subsection{Fase 1: Construcci\'on Heur\'istica Sensible al Tiempo}
+\subsection{Fase 1: Construcci\'on Heur\'istica Sensible al Tiempo y al Espacio}
 
-A diferencia de un enfoque voraz est\'andar que prioriza la compacidad espacial o la saturaci\'on de capacidad, la soluci\'on inicial se construye integrando la viabilidad de las ventanas de tiempo como criterio principal de inserci\'on. Los clientes se ordenan previamente de forma ascendente seg\'un el l\'imite superior de su ventana ($l_i$), garantizando que los nodos con urgencia cr\'itica se ruteen primero.
+A diferencia de un enfoque voraz est\'andar que prioriza \'unicamente la compacidad espacial o la saturaci\'on de capacidad, la soluci\'on inicial se construye integrando la viabilidad de las ventanas de tiempo como criterio principal de inserci\'on. El ordenamiento previo de los clientes no depende exclusivamente de $l_i$: se calcula un \textit{score} compuesto que penaliza la lejan\'ia al dep\'osito m\'as cercano,
 
-El algoritmo intenta insertar secuencialmente al cliente en el primer veh\'iculo disponible, sujeto a dos validaciones estrictas: el l\'imite de capacidad no debe ser superado, y la inserci\'on no debe generar tardanza en la ruta en construcci\'on (\texttt{eval\_test.tardanza\_total == 0}). Si no existe un veh\'iculo que satisfaga estas condiciones, el sistema recurre a un mecanismo de \textit{fallback}, insertando al cliente en la ruta que genere el menor incremento marginal en la Funci\'on Objetivo. Esta l\'ogica asegura una topolog\'ia inicial con alta proporci\'on de nodos factibles.
+\begin{equation}
+\text{score}(c) = l_c - 0.5 \cdot \min_{d \in D} \, d_{cd},
+\end{equation}
+
+y los clientes se ordenan de forma ascendente seg\'un este valor. La intuici\'on de dise\~no es doble: por un lado, los clientes con ventana de tiempo m\'as restrictiva ($l_c$ peque\~no) deben rutearse primero para evitar que queden ``atrapados'' al final de una ruta ya saturada de tiempo; por otro, entre dos clientes con urgencia similar, se prioriza al que est\'a m\'as alejado de cualquier dep\'osito, bajo la premisa de que los nodos lejanos tienen menos oportunidades de inserci\'on factible y conviene fijarlos en la topolog\'ia antes que los nodos c\'omodos, que casi siempre encontrar\'an espacio en alguna ruta posterior.
+
+Una vez ordenada la lista, el algoritmo recorre los dep\'ositos y, dentro de cada dep\'osito, los veh\'iculos, en el orden en que fueron declarados (no se eval\'uan todas las combinaciones posibles para escoger la mejor, sino que se adopta la primera que cumple ambas condiciones: \textit{first-fit}, no \textit{best-fit}). Para cada candidato $(d, v)$ se exige:
+
+\begin{itemize}
+\item \textbf{Factibilidad de capacidad:} la carga acumulada del veh\'iculo m\'as la demanda del nuevo cliente no debe superar $Q$.
+\item \textbf{Factibilidad temporal estricta:} al insertar tentativamente al cliente al final de la ruta y reevaluarla completa con \texttt{evaluar\_ruta}, la tardanza total de \textit{toda} la ruta (no solo la del nuevo cliente) debe ser exactamente cero (\texttt{eval\_test.tardanza\_total == 0}).
+\end{itemize}
+
+Si ning\'un par $(d, v)$ satisface ambas condiciones, el algoritmo recurre a un mecanismo de \textit{fallback}: se eval\'ua la inserci\'on del cliente en \textbf{todos} los veh\'iculos con capacidad disponible (sin exigir factibilidad temporal) y se selecciona aquel que produce el menor valor de la Funci\'on Objetivo de ruta (ecuaci\'on~7), es decir, el que introduce la menor magnitud de tardanza ponderada. Esta es una diferencia sutil pero relevante: mientras la fase principal es estrictamente \textit{first-fit} y conservadora, el \textit{fallback} es \textit{best-fit} y tolera infactibilidad transitoria, delegando su correcci\'on a la Fase~2. Esta combinaci\'on asegura una topolog\'ia inicial con alta proporci\'on de nodos factibles, sin bloquear la construcci\'on cuando ning\'un veh\'iculo admite al cliente sin violaci\'on.
 
 \subsection{Fase 2: Hill Climbing con Best Improvement e Inter-Ruta}
 
-La optimizaci\'on aplica un esquema de \textit{Hill Climbing} (HC) determinista sobre la soluci\'on inicial. Se implementa una estrategia de \textbf{Best Improvement}, la cual explora exhaustivamente toda la vecindad intra-ruta disponible (generada por un operador espec\'ifico) para encontrar el movimiento que produzca la mayor reducci\'on en la funci\'on objetivo ($\Delta < 0$). 
+La optimizaci\'on aplica un esquema de \textit{Hill Climbing} (HC) determinista sobre la soluci\'on inicial, articulado en dos operadores complementarios que act\'uan en secuencia estricta: primero el operador \textbf{intra-ruta} hasta su convergencia, y luego el operador \textbf{inter-ruta} hasta su propia convergencia.
 
-El ciclo de HC converge cuando no se detectan movimientos que reduzcan la FO. Tras alcanzar este \'optimo local intra-ruta, el algoritmo aplica de manera iterativa un operador \textbf{Inter-Ruta} (\texttt{relocate\_inter\_ruta}), dise\~nado para trasladar clientes problem\'aticos entre diferentes veh\'iculos. Este operador act\'ua como un embudo algor\'itmico, destrabando configuraciones sub\'optimas que los operadores internos no pueden resolver por carecer de movilidad entre vectores.
+\textbf{Hill Climbing intra-ruta.} En cada iteraci\'on, el algoritmo recorre \textit{todas} las rutas de \textit{todos} los dep\'ositos y, dentro de cada ruta con al menos dos clientes, eval\'ua exhaustivamente el conjunto de movimientos generables por el operador activo (Swap, Relocate o 2-Opt) sobre todos los pares de posiciones $(i, j)$ admisibles. Para cada movimiento candidato se calcula el costo de la ruta resultante y se compara contra el costo de la ruta original mediante un delta local:
+
+\[
+\Delta(i,j) = \text{FO}_{\text{ruta}}(\text{vec\_ruta}) - \text{FO}_{\text{ruta}}(\text{ruta original}).
+\]
+
+A diferencia de una b\'usqueda \textit{First Improvement}, el algoritmo \textbf{no aplica el primer movimiento que mejora}, sino que conserva el m\'inimo global de $\Delta$ entre absolutamente todas las rutas, dep\'ositos y posiciones evaluadas en esa pasada, y solo entonces ejecuta el \'unico movimiento con mayor reducci\'on (\textbf{Best Improvement} a nivel de soluci\'on completa, no solo de ruta). El ciclo se repite hasta que ninguna perturbaci\'on produce $\Delta < -10^{-4}$, o hasta alcanzar el l\'imite de 1000 iteraciones. Es importante notar una asimetr\'ia entre operadores: para \texttt{RELOCATE} se eval\'uan todas las posiciones de inserci\'on $j \neq i$ (incluyendo posiciones anteriores a $i$), mientras que para \texttt{SWAP} y \texttt{2-OPT} solo se consideran pares con $j > i$, ya que intercambiar $(i,j)$ es equivalente a intercambiar $(j,i)$ y revertir el segmento $[i,j]$ es id\'entico a revertirlo en sentido contrario; esto evita evaluar movimientos sim\'etricamente redundantes sin perder cobertura de la vecindad.
+
+\textbf{Relocate Inter-Ruta.} Tras converger el HC intra-ruta, se invoca repetidamente la funci\'on \texttt{relocate\_inter\_ruta} mediante el patr\'on \texttt{while (relocate\_inter\_ruta(...))}. A diferencia del operador intra-ruta, esta funci\'on eval\'ua, en una sola pasada, el costo de \textbf{remover} cada cliente $i$ de su ruta de origen $(d_1, v_1)$ -- calculando la ganancia $g = \text{FO}(\text{ruta}_1) - \text{FO}(\text{ruta}_1 \setminus \{i\})$ -- y el costo de \textbf{insertarlo} en cada posici\'on $j$ de cualquier otra ruta $(d_2, v_2)$ del sistema, incluyendo rutas de otros dep\'ositos -- calculando el costo $c = \text{FO}(\text{ruta}_2 \cup \{i\}) - \text{FO}(\text{ruta}_2)$. El movimiento global se acepta solo si $\delta = c - g < 0$, y de todas las combinaciones $(i, d_1, v_1, j, d_2, v_2)$ evaluadas se ejecuta \'unicamente la de menor $\delta$. Si ninguna combinaci\'on mejora la soluci\'on, la funci\'on retorna \texttt{false} y el ciclo \texttt{while} en el \textit{main} se detiene. Este operador es, en la pr\'actica, el \'unico mecanismo capaz de mover clientes \textbf{entre dep\'ositos distintos}, lo que lo convierte en el verdadero responsable de resolver la dimensi\'on ``multi-dep\'osito'' del problema; los tres operadores intra-ruta descritos en la Secci\'on~6.4 operan exclusivamente dentro de una \'unica ruta y son, por tanto, ciegos a la asignaci\'on cliente-dep\'osito.
 
 \subsection{Funci\'on de Evaluaci\'on con Gradiente Proporcional}
 
@@ -272,16 +338,21 @@ Para evitar el estancamiento de la b\'usqueda local en zonas topol\'ogicas plana
 Z = \text{distancia\_total} + 100.0 \cdot \sum \max(0, T_{ik} - l_i) + 500.0 \cdot \max(0, C_k - Q)
 \end{equation}
 
-Este gradiente continuo permite que el algoritmo detecte y ejecute perturbaciones que, si bien no logran la factibilidad inmediata, reducen la magnitud del error log\'istico, guiando matem\'aticamente la b\'usqueda hacia la zona factible.
+Este gradiente continuo permite que el algoritmo detecte y ejecute perturbaciones que, si bien no logran la factibilidad inmediata, reducen la magnitud del error log\'istico, guiando matem\'aticamente la b\'usqueda hacia la zona factible. La evaluaci\'on subyacente (\texttt{evaluar\_ruta}) simula el avance del veh\'iculo nodo a nodo: si la llegada ocurre antes de $e_i$, el reloj de la ruta se adelanta hasta $e_i$ (espera sin costo expl\'icito); si ocurre despu\'es de $l_i$, se registra la tardanza pero el reloj \textbf{no} se trunca a $l_i$, sino que contin\'ua desde la hora real de llegada. Esta decisi\'on es cr\'itica para el comportamiento observado en los resultados: una vez que una ruta acumula retraso, dicho retraso se propaga y normalmente se agrava en los clientes subsecuentes, lo que penaliza fuertemente -- y de forma realista -- a las rutas mal secuenciadas. La verificaci\'on de capacidad, en cambio, se eval\'ua una sola vez al final del recorrido (carga total contra $Q$), no de forma incremental nodo a nodo; esto es coherente con el hecho de que la demanda de un cliente no depende del orden en que se visita, solo de su pertenencia a la ruta.
+
+Los coeficientes $100.0$ y $500.0$ son constantes fijas (no calibradas emp\'iricamente ni ajustadas por instancia) cuya \'unica funci\'on es asegurar que ninguna mejora de distancia pura pueda compensar una unidad de tardanza o de exceso de capacidad, forzando al algoritmo a priorizar la factibilidad sobre la optimalidad geom\'etrica mientras existan violaciones activas.
 
 \subsection{Operadores de Vecindad Intra-Ruta}
 
 El modelo implementa tres operadores topol\'ogicos, evaluados de manera independiente:
+
 \begin{itemize}
-\item \textbf{Swap ($O(N^2)$):} Intercambia la secuencia de visita de dos clientes. Efectivo para corregir inversiones locales de precedencia.
-\item \textbf{Relocate ($O(N^2)$):} Extrae un nodo de su \'indice actual y lo reinserta en cualquier otra posici\'on de la ruta. Su alto \'indice de movilidad lo hace superior en la resoluci\'on de restricciones temporales complejas.
-\item \textbf{2-Opt ($O(N^2)$):} Invierte el subsegmento comprendido entre dos nodos. Fundamental para eliminar cruces geom\'etricos en instacias con alta densidad espacial.
+\item \textbf{Swap ($O(N^2)$):} Intercambia la secuencia de visita de dos clientes. Efectivo para corregir inversiones locales de precedencia, pero conserva el resto de la secuencia intacta, por lo que su capacidad de explorar configuraciones topol\'ogicamente distantes es limitada.
+\item \textbf{Relocate ($O(N^2)$):} Extrae un nodo de su \'indice actual y lo reinserta en cualquier otra posici\'on de la ruta. Su alto \'indice de movilidad (un solo movimiento puede desplazar un nodo a trav\'es de toda la secuencia) lo hace superior en la resoluci\'on de restricciones temporales complejas, donde basta reubicar un \'unico cliente mal posicionado para eliminar una cadena de tardanzas.
+\item \textbf{2-Opt ($O(N^2)$):} Invierte el subsegmento comprendido entre dos nodos. Fundamental para eliminar cruces geom\'etricos en instancias con alta densidad espacial, aunque al revertir un segmento completo invierte tambi\'en el orden temporal relativo de todos los clientes intermedios, lo que puede introducir nuevas violaciones de ventana de tiempo si el segmento no era sim\'etrico en sus urgencias.
 \end{itemize}
+
+Cada evaluaci\'on de movimiento, sin importar el operador, requiere clonar la ruta completa (\texttt{vector<Node*> vec\_ruta = ruta;}) y volver a calcular su distancia y tiempo desde el dep\'osito mediante \texttt{evaluar\_ruta}, en $O(N)$ por evaluaci\'on. Como existen $O(N^2)$ pares $(i,j)$ por ruta, el costo de explorar la vecindad completa de \textbf{una} ruta en una sola iteraci\'on de HC es $O(N^3)$; sumado sobre todas las rutas y dep\'ositos, y repetido hasta convergencia, este es precisamente el cuello de botella algor\'itmico que se retoma cuantitativamente en la Secci\'on~8 y se discute como limitaci\'on central en las Conclusiones.
 
 % =========================================================
 \section{Experimentos}
@@ -289,7 +360,7 @@ El modelo implementa tres operadores topol\'ogicos, evaluados de manera independ
 
 \subsection{Instancias de Validaci\'on}
 
-Los ensayos computacionales se ejecutaron sobre un subconjunto truncado a 25 nodos de las instancias est\'andar de Solomon~\cite{solomon1987algorithms}. Esta reducci\'on dimensional permite aislar el comportamiento l\'ogico de los operadores frente a distintas topograf\'ias, minimizando el ruido introducido por la profundidad combinatoria. 
+Los ensayos computacionales se ejecutaron sobre un subconjunto truncado a 25 nodos de las instancias est\'andar de Solomon~\cite{solomon1987algorithms} (que en su versi\'on original contemplan 100 clientes). Esta reducci\'on dimensional permite aislar el comportamiento l\'ogico de los operadores frente a distintas topograf\'ias, minimizando el ruido introducido por la profundidad combinatoria, a costa de sacrificar representatividad respecto al desempe\~no a escala completa (limitaci\'on que se retoma en las Conclusiones).
 
 \begin{itemize}
 \item \textbf{C101 (Clustered):} 25 clientes, 3 veh\'iculos, $Q = 200$. Nodos estrictamente agrupados con ventanas de tiempo r\'igidas.
@@ -297,10 +368,43 @@ Los ensayos computacionales se ejecutaron sobre un subconjunto truncado a 25 nod
 \item \textbf{RC101 (Random-Clustered):} 25 clientes, 3 veh\'iculos, $Q = 200$. Escenario h\'ibrido que combina n\'ucleos de alta densidad con entregas aisladas.
 \end{itemize}
 
+Cada instancia fue preprocesada a un formato de texto plano propio, le\'ido por la funci\'on \texttt{leer\_instancia}, que separa expl\'icitamente la cabecera de configuraci\'on (n\'umero de dep\'ositos, veh\'iculos por dep\'osito y capacidad), el bloque \texttt{DEPOSITOS} y el bloque \texttt{CLIENTES}:
+
+\begin{verbatim}
+DEPOSITOS: <m> VEHICULOS_POR_DEPOSITO: <k> CAPACIDAD: <Q>
+DEPOSITOS
+id x y demand e_i l_i s_i
+...
+CLIENTES
+id x y demand e_i l_i s_i
+...
+\end{verbatim}
+
+Es relevante notar que el n\'umero de veh\'iculos por dep\'osito ($k$) se lee como un \'unico valor global aplicado a todos los dep\'ositos de la instancia, y no var\'ia entre dep\'ositos; esto simplifica el parser, pero implica que el dise\~no actual no admite flotas heterog\'eneas entre centros de distribuci\'on sin modificar el formato de entrada. En el caso de R201, el valor reportado de un \'unico veh\'iculo es, en rigor, un \'unico veh\'iculo \textit{por cada} dep\'osito definido en la instancia; dado que la instancia se trunca y se simplifica a un escenario predominantemente mono-dep\'osito para esta prueba, el efecto neto observado es el de un solo veh\'iculo disponible en el sistema, lo cual se analiza en profundidad en la Secci\'on~8.
+
+\subsection{Dise\~no Experimental}
+
+El experimento se dise\~n\'o como una comparaci\'on \textit{intra-instancia} de tres tratamientos (los operadores Swap, Relocate y 2-Opt), controlando la soluci\'on de partida para que sea id\'entica en los tres casos. Las variables del dise\~no son:
+
+\begin{itemize}
+\item \textbf{Variable independiente:} el operador de vecindad intra-ruta utilizado durante la Fase~2 (Swap, Relocate o 2-Opt).
+\item \textbf{Variable de bloqueo:} la instancia (C101, R201, RC101), cuya topolog\'ia geom\'etrica y r\'igidez temporal son fijas y conocidas, lo que permite atribuir diferencias de desempe\~no al operador y no a variaciones del problema.
+\item \textbf{Variables dependientes:} el valor final de la Funci\'on Objetivo, la distancia total recorrida, el tiempo de c\'omputo (en segundos, medido con \texttt{chrono::high\_resolution\_clock}) y el n\'umero de violaciones de restricciones (tardanza y exceso de capacidad) reportadas en \texttt{EvalResult}.
+\end{itemize}
+
+Dada la naturaleza determinista del \textit{Hill Climbing} implementado -- no existe componente aleatorio alguno en la construcci\'on greedy ni en la selecci\'on de movimientos, que siempre es \textit{Best Improvement} sobre el universo completo de candidatos --, no se requiere experimentaci\'on estoc\'astica, m\'ultiples corridas con distintas semillas, ni calibraci\'on de hiperpar\'ametros probabil\'isticos: una sola ejecuci\'on por combinaci\'on (instancia, operador) es suficiente para caracterizar completamente su comportamiento. El l\'imite m\'aximo de iteraciones del HC intra-ruta se estableci\'o en 1000 \'unicamente como salvaguarda contra ciclos infinitos por errores num\'ericos de punto flotante, no como un par\'ametro de calibraci\'on activo: en la pr\'actica, ninguna de las nueve corridas (3 instancias $\times$ 3 operadores) se acerc\'o a dicho l\'imite, ya que la convergencia ocurre naturalmente en un n\'umero de iteraciones muy inferior dado el tama\~no reducido de las instancias.
+
 \subsection{Protocolo Experimental}
 
-Dada la naturaleza determinista del \textit{Hill Climbing} implementado, no se requiere experimentaci\'on estoc\'astica ni calibraci\'on de hiperpar\'ametros probabil\'isticos. El l\'imite m\'aximo de iteraciones se estableci\'o en 1000 para evitar interrupciones prematuras.
-El protocolo consisti\'o en generar una soluci\'on constructiva \'unica por instancia, la cual fue clonada y sometida de forma independiente a la optimizaci\'on por los operadores Swap, Relocate y 2-Opt. Finalizada la b\'usqueda intra-ruta, se ejecut\'o el paso Inter-Ruta para depuraci\'on final. Se registr\'o el valor de FO, distancia, violaciones de restricciones y el tiempo de c\'omputo en milisegundos mediante la librer\'ia est\'andar de C++.
+El protocolo consistió en las siguientes etapas secuenciales:
+
+\begin{enumerate}
+    \item Generar una solución constructiva única por instancia mediante la función \texttt{generar\_solucion\_inicial\_greedy}.
+    \item Clonar dicha solución tres veces para garantizar puntos de partida idénticos en las optimizaciones posteriores.
+    \item Someter cada clon, de forma independiente, a la función \texttt{optimizar\_hc} con el operador correspondiente (Swap, Relocate o 2-Opt) hasta alcanzar su convergencia intra-ruta.
+    \item Ejecutar el ciclo de mejora \texttt{while (relocate\_inter\_ruta(...))} sobre cada clon, iterando hasta que no existan movimientos inter-ruta que favorezcan la función objetivo.
+    \item Registrar el valor final de la FO, la distancia total, las violaciones acumuladas y el tiempo de cómputo. Finalmente, exportar el detalle completo de cada ruta y sus penalizaciones a un archivo de texto independiente (\texttt{outputs/salida\_\{operador\}\_\{instancia\}.txt}).
+\end{enumerate}
 
 % =========================================================
 \section{Resultados}
@@ -318,9 +422,9 @@ Las Tablas~\ref{tab:C101}, \ref{tab:R201} y \ref{tab:RC101} exponen el rendimien
 \toprule
 \textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
 \midrule
-Swap     & 198.82 & 198.82 & 0.00 & 0 \\
+Swap & 198.82 & 198.82 & 0.00 & 0 \\
 Relocate & 198.82 & 198.82 & 0.00 & 0 \\
-2-Opt    & 198.82 & 198.82 & 0.00 & 0 \\
+2-Opt & 198.82 & 198.82 & 0.00 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -333,9 +437,9 @@ Relocate & 198.82 & 198.82 & 0.00 & 0 \\
 \toprule
 \textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
 \midrule
-Swap     & 575.64 & 575.64 & 0.00 & 0 \\
+Swap & 575.64 & 575.64 & 0.00 & 0 \\
 \textbf{Relocate}& \textbf{495.94} & \textbf{495.94} & \textbf{0.00} & \textbf{0} \\
-2-Opt    & 575.64 & 575.64 & 0.00 & 0 \\
+2-Opt & 575.64 & 575.64 & 0.00 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -348,9 +452,9 @@ Swap     & 575.64 & 575.64 & 0.00 & 0 \\
 \toprule
 \textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
 \midrule
-Swap     & 475.33 & 475.33 & 0.00 & 0 \\
+Swap & 475.33 & 475.33 & 0.00 & 0 \\
 Relocate & 475.33 & 475.33 & 0.00 & 0 \\
-2-Opt    & 475.33 & 475.33 & 0.00 & 0 \\
+2-Opt & 475.33 & 475.33 & 0.00 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -369,26 +473,22 @@ La resoluci\'on del MDVRP-TW a trav\'es de una arquitectura \textit{Hill Climbin
 
 El an\'alisis topol\'ogico demuestra que el comportamiento geom\'etrico de las redes log\'isticas dicta el rendimiento del operador heur\'istico. En ecosistemas aleatorios con amplios m\'argenes de operaci\'on, las t\'ecnicas de reubicaci\'on agresiva (Relocate) dominan la optimizaci\'on de trayectorias. Por el contrario, en escenarios aglomerados, la rigidez de las ventanas temporales provoca que la b\'usqueda local sea absorbida r\'apidamente por sumideros locales, requiriendo operadores inter-ruta como \'unica v\'ia de escape topol\'ogica.
 
-Desde un punto de vista cr\'itico y anal\'itico, es imperativo se\~nalar que el \'exito operativo en tiempos de $\approx 0.00$s es consecuencia directa de la reducci\'on dimensional del grafo ($N=25$) y de las capacidades del hardware actual. El dise\~no algor\'itmico presente carece de una implementaci\'on de Evaluaci\'on Delta. Actualmente, cada perturbaci\'on clona la ruta en memoria y recalcula las distancias desde el dep\'osito en $O(N)$, elevando la exploraci\'on del vecindario a un costo t\'ecnico de $O(N^3)$. A nivel de escala industrial, con redes log\'isticas de 500 o 1000 nodos, este enfoque es computacionalmente inviable. 
+Desde un punto de vista cr\'itico y anal\'itico, es imperativo se\~nalar que el \'exito operativo en tiempos de $\approx 0.00$s es consecuencia directa de la reducci\'on dimensional del grafo ($N=25$) y de las capacidades del hardware actual. El dise\~no algor\'itmico presente carece de una implementaci\'on de Evaluaci\'on Delta. Actualmente, cada perturbaci\'on clona la ruta en memoria y recalcula las distancias desde el dep\'osito en $O(N)$, elevando la exploraci\'on del vecindario a un costo t\'ecnico de $O(N^3)$. A nivel de escala industrial, con redes log\'isticas de 500 o 1000 nodos, este enfoque es computacionalmente inviable.
 
-En conclusi\'on, si bien el modelo desarrollado cumple exitosamente con los requisitos funcionales del VRPTW, el pr\'oximo hito tecnol\'ogico para garantizar la escalabilidad industrial debe ser obligatoriamente la transici\'on matem\'atica hacia evaluaciones de impacto local ($\Delta_{movimiento}$) en tiempo constante $O(1)$. 
+En conclusi\'on, si bien el modelo desarrollado cumple exitosamente con los requisitos funcionales del VRPTW, el pr\'oximo hito tecnol\'ogico para garantizar la escalabilidad industrial debe ser obligatoriamente la transici\'on matem\'atica hacia evaluaciones de impacto local ($\Delta_{movimiento}$) en tiempo constante $O(1)$.
 
 \section{Uso LLMs}
 
 \begin{enumerate}
 \item \textbf{Herramienta utilizada:} Gemini (Modelo Gemini 2.0 Flash), plan Paid/Pro.
-
 \item \textbf{Prop\'osito de uso:} B\'usqueda y localizaci\'on de material bibliogr\'afico dif\'icil de hallar, traducci\'on t\'ecnica de \textit{abstracts}, correcci\'on de estilo para evitar plagio y asistencia en el formato de c\'odigo LaTeX.
-
 \item \textbf{Prompts relevantes:}
 \begin{itemize}
 \item ``Mi ayudante gu\'ia me dio esta referencia recomendada, pero no puedo encontrarla, ?`existe alguna p\'agina para hallarla?''
 \item ``?`C\'omo cito esto si es el abstract de un paper de 1959?''
 \item ``Ayuda con la escritura de f\'ormulas matem\'aticas de lenguaje matem\'atico a LaTeX.''.
 \end{itemize}
-
 \item \textbf{Intervenci\'on:} El modelo proporcion\'o los datos faltantes de las referencias (volumen, n\'umero, p\'aginas) y sugiri\'o estructuras de p\'arrafos. Se utiliz\'o la IA como un colaborador para agilizar la b\'usqueda de informaci\'on y resolver errores de compilaci\'on de \textit{Latexmk}. Traducci\'on de modelos matem\'aticos desde lenguaje natural y descripciones t\'ecnicas a sintaxis de \textit{LaTeX}.
-
 \item \textbf{Validaci\'on:} Toda la informaci\'on entregada por la IA fue contrastada directamente con la base de datos de \textit{IEEE Xplore} y la \textit{Biblioteca Digital UTFSM}. Las f\'ormulas y conceptos NP-Hard fueron validados con los apuntes de la asignatura y la bibliograf\'ia oficial del curso.
 \end{enumerate}
 

@@ -1,0 +1,59 @@
+Semilla: 0
+Tiempo de computo: 0.0014 seg
+Valor Funcion objetivo: 475.33
+
+Distancia total recorrida: 475.33
+Tiempo total de viaje: 1187.24
+Vehiculos usados: 7
+
+Solucion:
+----------------------------------------
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 1:
+Ruta: D0 -> 7 -> 8 -> 3 -> 1 -> 4 -> D0
+Carga: 100.00 / 200.00
+Distancia: 62.16
+Tiempo: 194.41 seg
+
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 2:
+Ruta: D0 -> 12 -> 11 -> 9 -> 10 -> 13 -> D0
+Carga: 120.00 / 200.00
+Distancia: 62.28
+Tiempo: 177.13 seg
+
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 3:
+Ruta: D0 -> 14 -> 15 -> 16 -> 17 -> D0
+Carga: 70.00 / 200.00
+Distancia: 47.19
+Tiempo: 177.57 seg
+
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 4:
+Ruta: D0 -> 23 -> 21 -> 18 -> 25 -> D0
+Carga: 80.00 / 200.00
+Distancia: 133.80
+Tiempo: 222.78 seg
+
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 5:
+Ruta: D0 -> 2 -> 5 -> 6 -> D0
+Carga: 70.00 / 200.00
+Distancia: 56.09
+Tiempo: 121.95 seg
+
+Deposito D0 (X=12.06, Y=59.12)
+Vehiculo 6:
+Ruta: D0 -> 22 -> 20 -> 24 -> D0
+Carga: 60.00 / 200.00
+Distancia: 109.40
+Tiempo: 209.18 seg
+
+Deposito D1 (X=39.88, Y=9.38)
+Vehiculo 1:
+Ruta: D1 -> 19 -> D1
+Carga: 40.00 / 200.00
+Distancia: 4.42
+Tiempo: 84.21 seg
+
