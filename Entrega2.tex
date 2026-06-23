@@ -1,0 +1,398 @@
+\documentclass[letter, 10pt]{article}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage[dvips]{graphicx}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[top=3cm,bottom=3cm,left=3.5cm,right=3.5cm,footskip=1.5cm,headheight=1.5cm,margin=1in,headsep=0.5in,textheight=3cm]{geometry}
+
+
+\begin{document}
+\title{Inteligencia Artificial \\ \begin{Large}Informe Final: Problema Multi-Depot Vehicle Routing Problem with Time
+Windows (MDVRP-TW)\end{Large}}
+\author{Domingo Ruiz-Tagle}
+\date{\today}
+\maketitle
+
+
+%--------------------No borrar esta secci\'on--------------------------------%
+\section*{Evaluaci\'on}
+
+\begin{tabular}{ll}
+C\'odigo Fuente (10\%): &  \underline{\hspace{2cm}}\\
+Resumen (2\%):  & \underline{\hspace{2cm}} \\
+Introducci\'on (3\%):  & \underline{\hspace{2cm}} \\
+Representaci\'on (10\%):  & \underline{\hspace{2cm}} \\
+Descripci\'on del algoritmo (20\%):  & \underline{\hspace{2cm}} \\
+Experimentos (10\%):  & \underline{\hspace{2cm}} \\
+Resultados (30\%):  & \underline{\hspace{2cm}} \\
+Conclusiones (10\%): &  \underline{\hspace{2cm}}\\
+Bibliograf\'ia (5\%): & \underline{\hspace{2cm}}\\
+ &  \\
+\textbf{Nota Final (100)}:   & \underline{\hspace{2cm}}
+\end{tabular}
+%---------------------------------------------------------------------------%
+\vspace{2cm}
+
+\begin{abstract}
+El presente informe analiza el Problema de Ruteo de Veh\'iculos Multi-Dep\'osito con Ventanas de Tiempo (MDVRP-TW), un problema de optimizaci\'on combinatoria clasificado como NP-Hard. El objetivo principal es minimizar los costos operativos y penalizaciones temporales considerando m\'ultiples puntos de origen y plazos estrictos de atenci\'on. Se formula un modelo matem\'atico de programaci\'on lineal mixta y se examina el estado del arte, evidenciando que, si bien los m\'etodos exactos son ineficientes a escala industrial, las metaheur\'isticas h\'ibridas actuales logran soluciones de alta calidad. Finalmente, se discute la transici\'on hacia la log\'istica verde (GVRP) como tendencia cr\'itica para incorporar variables de sostenibilidad y autonom\'ia energ\'etica.
+\end{abstract}
+
+\section{Introducci\'on}
+
+La log\'istica moderna exige la optimizaci\'on continua de las cadenas de suministro para reducir costos operativos y mejorar el nivel de servicio. El \textbf{Vehicle Routing Problem} (VRP) es el marco te\'orico central que modela estas decisiones: dado un conjunto de clientes con demandas conocidas y una flota de veh\'iculos que parten de uno o m\'as dep\'ositos, el VRP busca determinar el conjunto de rutas de costo m\'inimo tal que cada cliente sea visitado exactamente una vez y se respeten las restricciones operativas de la flota. En este contexto, este informe tiene como prop\'osito analizar el \textbf{MDVRP-TW} (Multi-Depot VRP with Time Windows), una variante del VRP que incorpora dos extensiones cr\'iticas: m\'ultiples centros de distribuci\'on como puntos de partida y retorno de los veh\'iculos, y ventanas de tiempo que acotan el intervalo horario v\'alido para atender a cada cliente. El an\'alisis abarca su formulaci\'on matem\'atica como programa lineal mixto, la evoluci\'on de los m\'etodos de resoluci\'on desde enfoques exactos hasta metaheur\'isticas h\'ibridas, y una experimentaci\'on comparativa de tres operadores de b\'usqueda local sobre instancias del est\'andar Solomon. La motivaci\'on de esta investigaci\'on nace de la creciente necesidad por sistemas de distribuci\'on m\'as \'agiles y sostenibles, para garantizar la rentabilidad de las operaciones de transporte actuales.
+
+El informe se estructura de la siguiente manera: primero, se presenta una definici\'on del problema, sus variables y restricciones fundamentales, junto con las variantes m\'as relevantes que han derivado de \'el. Luego, se expone el estado del arte, evaluando la evoluci\'on cronol\'ogica de los m\'etodos de resoluci\'on, sus ventajas, limitaciones y el paradigma h\'ibrido dominante en la literatura reciente. Posteriormente, se plantea un modelo matem\'atico de programaci\'on lineal mixta con sus conjuntos, par\'ametros, variables de decisi\'on y restricciones operativas. Para finalizar, en las conclusiones se sintetizan las barreras tecnol\'ogicas que a\'un enfrenta el ruteo de veh\'iculos y se perfilan los pr\'oximos pasos de la industria, fuertemente marcados por la necesidad de una log\'istica sostenible.
+
+\section{Definici\'on del Problema}
+
+MDVRP-TW, o mejor conocido como Multi-Depot Vehicle Routing Problem with Time Windows, es un problema proveniente de Vehicle Routing Problem (VRP), uno de los problemas de optimizaci\'on combinatoria m\'as estudiados desde su formulaci\'on original introducida por Dantzig y Ramser en 1959. En su forma b\'asica busca encontrar una forma de asignar estaciones a camiones de tal manera que las demandas de las estaciones se satisfagan y el kilometraje total recorrido por la flota sea m\'inimo. Se proporciona un procedimiento basado en una formulaci\'on de programaci\'on lineal para obtener una soluci\'on cercana a la \'optima~\cite{1959truck}.\\
+
+A diferencia del modelo original, el MDVRP-TW a\~nade dos capas de complejidad cr\'itica para la log\'istica moderna. Formalmente, el problema se define sobre un grafo dirigido completo $G = (V, A)$, donde $V = D \cup C$ es el conjunto de nodos con $D = \{d_1, \dots, d_m\}$ el conjunto de dep\'ositos y $C = \{c_1, \dots, c_n\}$ el conjunto de clientes, y $A = \{(i,j) \mid i,j \in V,\, i \neq j\}$ el conjunto de arcos que representan los trayectos posibles. A cada arco $(i,j)$ se le asocia una distancia $d_{ij} \geq 0$ y un tiempo de viaje $t_{ij} \geq 0$. Cada cliente $c_i \in C$ tiene una demanda $q_i > 0$ y una ventana de tiempo $[e_i,\, l_i]$ con tiempo de servicio $s_i$. Cada dep\'osito $d_r \in D$ dispone de una flota de $k$ veh\'iculos homog\'eneos de capacidad $Q$. El objetivo es asignar clientes a dep\'ositos y construir rutas para cada veh\'iculo que minimicen el costo total, respetando las restricciones de capacidad, ventanas de tiempo y retorno al dep\'osito de origen. Las dos extensiones respecto al VRP cl\'asico son:
+
+\begin{itemize}
+\item \textbf{M\'ultiples puntos de origen:} Los veh\'iculos no parten de una \'unica terminal, sino de diversos dep\'ositos, lo que requiere una decisi\'on previa de asignaci\'on cliente-dep\'osito.
+\item \textbf{Time Windows:} Cada cliente debe ser atendido dentro de un intervalo temporal definido, donde se establece un tiempo de llegada m\'as temprano y el m\'as tard\'io permitido para el servicio.
+\end{itemize}
+
+Computacionalmente, este problema pertenece a la clase \textbf{NP-Hard}, lo que implica que encontrar la soluci\'on \'optima global requiere un costo computacional prohibitivo para instancias de gran escala. Adem\'as, combina caracter\'isticas del problema de la mochila (restricci\'on de capacidad) y del problema del vendedor viajero (TSP).\\
+
+\noindent Para la formalizaci\'on del MDVRP-TW, es necesario considerar un conjunto de componentes cr\'iticos que definen al problema:
+
+\begin{itemize}
+\item \textbf{Variables de decisi\'on:} Se centran principalmente en la asignaci\'on de clientes a dep\'ositos y la determinaci\'on de la secuencia de visitas (rutas) que minimicen el costo operativo.
+\item \textbf{Restricciones fundamentales:} Adem\'as de la capacidad de carga y las ventanas de tiempo ya mencionadas, se debe respetar:
+\begin{itemize}
+\item \textbf{Visita \'unica:} Cada cliente del conjunto total debe ser visitado exactamente una vez.
+\item \textbf{Capacidad de flota:} La suma de las demandas de los clientes en una ruta no puede exceder el l\'imite de carga del veh\'iculo.
+\item \textbf{Continuidad temporal:} Todos los veh\'iculos inician su operaci\'on simult\'aneamente al comienzo del tiempo programado.
+\item \textbf{Retorno a base:} Los veh\'iculos deben comenzar y finalizar su trayecto en el mismo dep\'osito de origen.
+\item \textbf{L\'ogica de servicio:} Si un veh\'iculo llega antes del tiempo permitido, debe esperar. Si llega despu\'es, se aplica una penalizaci\'on proporcional al tiempo de retraso incurrido.
+\end{itemize}
+\item \textbf{Funci\'on objetivo:} El prop\'osito principal es la minimizaci\'on de una funci\'on de costo global, la cual suele integrar la distancia total recorrida, el n\'umero de veh\'iculos activos y, en algunos casos, las penalizaciones por retrasos en las entregas.
+\end{itemize}
+
+MDVRP-TW, al ser una variante, representa solo una fracci\'on de los problemas de VRP. Se presentan a continuaci\'on otras de las variantes m\'as relevantes:
+
+\begin{itemize}
+\item \textbf{Heterogeneous VRP (HVRPTW):} A diferencia del modelo est\'andar que asume una flota uniforme, esta variante considera veh\'iculos con distintas capacidades, costos operativos y autonom\'ias. Introduce la necesidad de realizar una asignaci\'on estrat\'egica del tipo de veh\'iculo por ruta, lo que incrementa la complejidad combinatoria al a\~nadir una dimensi\'on de decisi\'on tipo Bin Packing al ruteo~\cite{baldacci2008heterogeneous}.
+\item \textbf{Capacitated VRP (CVRP):} El volumen de pedidos despachados en una sola ruta est\'a condicionado por la capacidad m\'axima del veh\'iculo. Esta restricci\'on asegura que la demanda agregada de los nodos visitados no exceda la disponibilidad de carga del transporte.
+\item \textbf{Dynamic VRP (DVRPTW):} Representa el escenario operativo m\'as complejo, donde la informaci\'on se revela de forma estoc\'astica durante la ejecuci\'on de las rutas. Esta variante invalida las soluciones est\'aticas y exige el uso de algoritmos de re-optimizaci\'on en tiempo real capaces de actualizar el plan de despacho en segundos~\cite{psaraftis2016dynamic}.
+\item \textbf{Multi-Depot VRP (MDVRP):} El sistema no se limita a un punto de despacho centralizado, sino que dispone de diversos centros log\'isticos o dep\'ositos desde los cuales la flota puede iniciar sus recorridos.
+\item \textbf{Green VRP with Time Windows (GVRPTW):} Esta variante integra objetivos de sostenibilidad ambiental mediante la optimizaci\'on del consumo de energ\'ia o la reducci\'on de emisiones de CO$_2$. A diferencia del modelo cl\'asico, considera veh\'iculos el\'ectricos o de combustible alternativo, incorporando restricciones adicionales como la autonom\'ia limitada de las bater\'ias y la necesidad de visitar estaciones de carga dentro de ventanas de tiempo espec\'ificas~\cite{schneider2014electric}.
+\end{itemize}
+
+\section{Estado del Arte}
+
+\subsection{Hito Fundacional y Evoluci\'on Cronol\'ogica}
+
+El estudio sistem\'atico del ruteo de veh\'iculos se origina con Dantzig y Ramser~\cite{1959truck}, quienes en 1959 formularon el problema del despacho de camiones como un programa lineal, estableciendo la base formal sobre la cual se construir\'ian d\'ecadas de investigaci\'on. Su contribuci\'on no fue \'unicamente t\'ecnica: defini\'o el paradigma de modelar decisiones log\'isticas como problemas de optimizaci\'on combinatoria, sentando el lenguaje matem\'atico que a\'un domina la literatura.
+
+Durante las siguientes d\'ecadas, la investigaci\'on avanz\'o hacia variantes progresivamente m\'as realistas. El salto cualitativo m\'as relevante para la industria lleg\'o con Solomon~\cite{solomon1987algorithms} en 1987, quien introdujo las restricciones de ventanas de tiempo al VRP cl\'asico, generando el est\'andar VRPTW. Su contribuci\'on fue doble: adem\'as de formalizar el problema, propuso un conjunto de instancias de \textit{benchmark} (conjuntos C, R y RC) que se convirtieron en el est\'andar de evaluaci\'on comparativa de la comunidad durante m\'as de tres d\'ecadas. Este hito es cr\'itico porque permiti\'o, por primera vez, comparar algoritmos de distintos autores sobre una base objetiva y reproducible.
+
+La transici\'on hacia el MDVRP-TW representa una complejidad adicional sustancial: al incorporar m\'ultiples dep\'ositos, el espacio de decisi\'on se ampl\'ia con la asignaci\'on previa de clientes a dep\'ositos, un subproblema que por s\'i solo es \textit{NP-Hard}. Toth y Vigo~\cite{toth2002bra} documentan c\'omo esta explosi\'on combinatoria hace inviables los m\'etodos exactos a escala industrial, marcando el inicio de la era de las heur\'isticas como enfoque dominante.
+
+\subsection{M\'etodos de Resoluci\'on: Ventajas, Limitaciones y Comparativa Cr\'itica}
+
+A lo largo de la evoluci\'on del problema, tres familias de m\'etodos han competido por establecerse como el enfoque dominante, cada una con \textit{trade-offs} bien documentados.
+
+\begin{itemize}
+\item \textbf{M\'etodos Exactos:} Garantizan la optimalidad matem\'atica mediante t\'ecnicas como \textit{Branch-and-Bound} o programaci\'on entera mixta. Su ventaja es irrefutable en instancias peque\~nas: la soluci\'on obtenida es, por definici\'on, la mejor posible. Sin embargo, Toth y Vigo~\cite{toth2002bra} demuestran emp\'iricamente que su limitaci\'on es estructural e irresoluble: el tiempo de c\'omputo crece de forma exponencial con el tama\~no de la instancia, haci\'endolos inviables para problemas con m\'as de 100 nodos. En la pr\'actica log\'istica, donde una red de distribuci\'on puede involucrar cientos o miles de clientes, esta familia de m\'etodos queda relegada a la validaci\'on de soluciones en instancias reducidas o como cota inferior de referencia.
+
+\item \textbf{Heur\'isticas y Metaheur\'isticas:} Surgieron precisamente para superar esta barrera de escalabilidad. Br\"aysy y Gendreau~\cite{braysy2005meta} realizan una revisi\'on sistem\'atica de metaheur\'isticas aplicadas al VRPTW, concluyendo que algoritmos como B\'usqueda Tab\'u, Recocido Simulado y los Algoritmos Gen\'eticos (GA) logran soluciones de alta calidad en tiempos de c\'omputo acotados y polinomiales. No obstante, su an\'alisis expone la limitaci\'on cr\'itica compartida por esta familia: la sensibilidad param\'etrica. El rendimiento de estos algoritmos depende fuertemente de la calibraci\'on de hiperpar\'ametros, cuyo ajuste \'optimo var\'ia seg\'un la instancia. Zhang et al.~\cite{zhang2024application} corroboran esta debilidad en el contexto espec\'ifico de m\'ultiples veh\'iculos, confirmando que los GA presentan riesgo de convergencia prematura hacia \'optimos locales cuando los par\'ametros no est\'an correctamente ajustados.
+\end{itemize}
+
+La comparaci\'on entre ambas familias no es simplemente de velocidad versus calidad: es una elecci\'on entre certeza y viabilidad. Los m\'etodos exactos ofrecen certeza pero son inviables; las metaheur\'isticas son viables pero sin garant\'ia de optimalidad. Esta tensi\'on es el motor que impulsa la hibridaci\'on como paradigma dominante en la literatura reciente.
+
+\subsection{Representaciones H\'ibridas: El Paradigma Dominante}
+
+La respuesta de la comunidad cient\'ifica a las limitaciones individuales de cada familia ha sido la hibridaci\'on sistem\'atica. Li et al.~\cite{10603115} presentan uno de los enfoques m\'as representativos de esta tendencia: una estrategia en dos etapas que combina \textit{K-means Clustering} con \textit{Ant Colony Optimization} (ACO). En la primera etapa, el \textit{Clustering} agrupa geogr\'aficamente a los clientes y los asigna a dep\'ositos, reduciendo dr\'asticamente el espacio de b\'usqueda al descomponer el problema global en subproblemas locales manejables. En la segunda etapa, ACO resuelve el ruteo dentro de cada cl\'uster, aprovechando su mecanismo de estigmergia para explorar el espacio de soluciones de forma distribuida y adaptativa.
+
+La fortaleza de este enfoque h\'ibrido es precisamente que neutraliza las debilidades individuales de sus componentes: el \textit{Clustering} controla la explosi\'on combinatoria del multi-dep\'osito, mientras que ACO aporta robustez ante \'optimos locales. Comparado con GA puro~\cite{zhang2024application}, este esquema resulta m\'as estable ante variaciones de instancia, ya que la descomposici\'on espacial previa reduce la dependencia en la calibraci\'on de par\'ametros.
+
+En el extremo de la complejidad, Baldacci et al.~\cite{baldacci2008heterogeneous} introducen la dimensi\'on de heterogeneidad de flota (HVRPTW), donde los veh\'iculos difieren en capacidad y costo operativo. Esto a\~nade al ruteo un subproblema de asignaci\'on tipo \textit{Bin Packing}: no solo se decide el orden de visita, sino tambi\'en qu\'e tipo de veh\'iculo realiza cada ruta. Este incremento en la dimensionalidad exige redise\~nar los operadores de b\'usqueda, ya que una soluci\'on factible para flota homog\'enea puede ser infactible al considerar capacidades diferenciadas.
+
+En t\'erminos de representaci\'on, el esquema dominante en la literatura reciente modela el MDVRP-TW sobre un grafo completo $G = (V, A)$, donde los dep\'ositos y clientes constituyen el conjunto de nodos $V$ y los arcos $A$ representan los trayectos posibles entre ellos. Li et al.~\cite{10603115} adoptan esta representaci\'on e incorporan la duplicaci\'on de nodos de dep\'osito para permitir que cada veh\'iculo inicie y finalice en el mismo origen, lo que simplifica la formulaci\'on de las restricciones de retorno a base. Esta representaci\'on ha demostrado ser la m\'as efectiva para integrar simult\'aneamente las restricciones de capacidad, ventanas de tiempo y multi-dep\'osito, dado que permite expresar la totalidad de las condiciones operativas como restricciones lineales sobre variables binarias de arco.
+
+\subsection{La Frontera Actual: Dinamismo y Log\'istica Verde}
+
+La frontera m\'as activa de la investigaci\'on contempor\'anea se articula en torno a dos desaf\'ios que los modelos est\'aticos y homog\'eneos no pueden resolver.
+
+\begin{itemize}
+\item \textbf{Dinamismo Operativo (DVRPTW):} Psaraftis et al.~\cite{psaraftis2016dynamic} documentan tres d\'ecadas de investigaci\'on, concluyendo que la informaci\'on que se revela en tiempo real durante la ejecuci\'on de las rutas (nuevos pedidos, cancelaciones, tr\'afico) invalida cualquier soluci\'on est\'atica. Los algoritmos de re-optimizaci\'on deben actualizar el plan de despacho en segundos, lo que impone restricciones de tiempo de c\'omputo incompatibles con la mayor\'ia de las metaheur\'isticas convencionales.
+
+\item \textbf{Sostenibilidad Energ\'etica (GVRP / EVRPTW):} Schneider et al.~\cite{schneider2014electric} formalizan el problema incorporando autonom\'ia limitada de bater\'ia y estaciones de recarga como nodos adicionales en el grafo. Montoya et al.~\cite{montoya2017electric} profundizan esta l\'inea al modelar funciones de carga no lineales, un aspecto cr\'itico que los modelos anteriores simplificaban incorrectamente. Esta no-linealidad transforma el subproblema de \textit{scheduling} de carga en un problema de control \'optimo. La limitaci\'on cr\'itica que persiste es que a\~nadir estaciones y tiempos de espera multiplica el espacio de b\'usqueda, exigiendo que las metaheur\'isticas de vanguardia sean redise\~nadas con operadores especializados para mantener la factibilidad energ\'etica.
+\end{itemize}
+
+\section{Modelo Matem\'atico}
+
+La formulaci\'on presentada a continuaci\'on se basa en el modelo matem\'atico propuesto por Li et al.~\cite{10603115}, el cual aborda el problema de ruteo multi-dep\'osito integrando restricciones de capacidad y ventanas de tiempo suaves (soft time windows). Esta representaci\'on ha sido adaptada para el presente informe, manteniendo la coherencia con los par\'ametros t\'ecnicos del problema de estudio.
+
+\subsection{Conjuntos e \'Indices}
+
+El espacio de b\'usqueda se define sobre un grafo completo $G = (V, A)$, donde:
+
+\begin{itemize}
+\item $D = \{1, \dots, m\}$: Conjunto de dep\'ositos.
+\item $C = \{m+1, \dots, m+n\}$: Conjunto de clientes.
+\item $V = D \cup C$: Conjunto total de nodos.
+\item $K$: Conjunto de veh\'iculos disponibles, asumidos con capacidad homog\'enea.
+\item $(i, j) \in A$: Arcos que representan el trayecto desde el nodo $i$ al nodo $j$.
+\end{itemize}
+
+\subsection{Par\'ametros}
+
+\begin{itemize}
+\item $Q$: Capacidad m\'axima de carga de cada veh\'iculo.
+\item $q_i$: Demanda de carga del cliente $i \in C$.
+\item $d_{ij}$: Distancia entre el nodo $i$ y el nodo $j$.
+\item $t_{ij}$: Tiempo de viaje entre $i$ y $j$.
+\item $s_i$: Tiempo de servicio en el cliente $i$.
+\item $[e_i, l_i]$: Ventana de tiempo (inicio y fin) para atender al cliente $i$.
+\item $P_i(T_{ik})$: Funci\'on de penalizaci\'on por violaci\'on de la ventana de tiempo.
+\end{itemize}
+
+\subsection{Variables de Decisi\'on}
+
+\begin{itemize}
+\item $x_{ijk} \in \{0, 1\}$: Vale 1 si el veh\'iculo $k$ viaja directamente del nodo $i$ al $j$, y 0 en caso contrario.
+\item $T_{ik}$: Tiempo de llegada del veh\'iculo $k$ al nodo $i$.
+\end{itemize}
+
+\subsection{Funci\'on Objetivo}
+
+El modelo busca minimizar una funci\'on de costo global que integra la operaci\'on y el cumplimiento log\'istico:
+
+\begin{equation}
+\min Z = \sum_{k \in K} \sum_{i \in V} \sum_{j \in V} d_{ij} x_{ijk} + \sum_{k \in K} \sum_{i \in C} P_i(T_{ik})
+\end{equation}
+
+Donde el primer t\'ermino representa la distancia total recorrida y el segundo t\'ermino las penalizaciones por desv\'ios en las ventanas de tiempo.
+
+\subsection{Restricciones}
+
+El modelo est\'a sujeto a las siguientes condiciones operativas:
+
+\begin{equation}
+\sum_{k \in K} \sum_{i \in V} x_{ijk} = 1, \quad \forall j \in C
+\end{equation}
+
+La restricci\'on (2) asegura que cada cliente sea visitado exactamente una vez por un solo veh\'iculo.
+
+\begin{equation}
+\sum_{i \in V} x_{ipk} - \sum_{j \in V} x_{pjk} = 0, \quad \forall p \in C, \forall k \in K
+\end{equation}
+
+La ecuaci\'on (3) garantiza la conservaci\'on de flujo: el veh\'iculo que entra a un nodo debe salir de \'el.
+
+\begin{equation}
+\sum_{i \in C} q_i \left( \sum_{j \in V} x_{ijk} \right) \leq Q, \quad \forall k \in K
+\end{equation}
+
+La restricci\'on (4) limita la carga total de cada ruta a la capacidad m\'axima $Q$ del veh\'iculo.
+
+\begin{equation}
+T_{ik} + s_i + t_{ij} - M(1 - x_{ijk}) \leq T_{jk}, \quad \forall i, j \in V, \forall k \in K
+\end{equation}
+
+La ecuaci\'on (5) define la continuidad temporal de los trayectos, utilizando una constante $M$ (Big-M) para asegurar la validez de los tiempos de llegada.
+
+\begin{equation}
+\sum_{i \in D} \sum_{j \in C} x_{ijk} = \sum_{i \in C} \sum_{j \in D} x_{ijk} \leq 1, \forall k \in K
+\end{equation}
+
+Finalmente, la restricci\'on (6) obliga a que los veh\'iculos comiencen y terminen su recorrido en el mismo dep\'osito.
+
+% =========================================================
+\section{Representaci\'on}
+% =========================================================
+
+Una soluci\'on del MDVRP-TW se representa en la implementaci\'on computacional como un mapa hash que asocia cada dep\'osito a un conjunto de rutas:
+
+\[
+\texttt{Solucion} : \text{id\_dep\'osito} \;\longrightarrow\; \bigl[ \,\text{Ruta}_1,\; \text{Ruta}_2,\; \ldots,\; \text{Ruta}_k \,\bigr]
+\]
+
+donde cada $\text{Ruta}_j$ es un vector de punteros a nodos clientes, ordenados estrictamente seg\'un la secuencia l\'ogica de visita. En C++, esta topolog\'ia se traduce de la siguiente manera:
+
+\begin{verbatim}
+typedef map<string, vector<vector<Node*>>> Solucion;
+\end{verbatim}
+
+La clave del mapa es el identificador alfanum\'erico del dep\'osito (por ejemplo, \texttt{"D0"}), y cada elemento del vector externo corresponde a un veh\'iculo asignado a ese centro. Un veh\'iculo sin clientes asignados se representa estructuralmente como un vector vac\'io; esto permite mantener la disponibilidad fija de $k$ veh\'iculos por dep\'osito sin necesidad de instanciar o destruir estructuras de memoria en tiempo de ejecuci\'on.
+
+Cada nodo de la red l\'ogica se modela mediante la estructura \texttt{Node}, que centraliza los par\'ametros est\'aticos requeridos para la evaluaci\'on de factibilidad:
+
+\begin{verbatim}
+struct Node {
+    string id;
+    double x, y;      // coordenadas espaciales
+    double demand;    // carga requerida
+    double e_i, l_i;  // ventana temporal admisible
+    double s_i;       // tiempo de descarga/servicio
+    bool is_depot;    // flag l\'ogico de clasificaci\'on
+};
+\end{verbatim}
+
+Las \textbf{variables de dominio din\'amicas} que determinan el estado de la soluci\'on son:
+\begin{itemize}
+    \item \textbf{Secuencia posicional:} El orden de los punteros \texttt{Node*} dentro del vector interno define impl\'icitamente la distancia de los arcos y la propagaci\'on del tiempo de viaje.
+    \item \textbf{Asignaci\'on de flota:} Determina en qu\'e sub-vector reside un cliente. La l\'ogica de ruteo exige que cada \texttt{Node*} exista exactamente en una coordenada de la matriz bidimensional.
+    \item \textbf{Acumulaci\'on de carga y tiempo:} Variables din\'amicas calculadas secuencialmente durante la funci\'on de evaluaci\'on para detectar excesos respecto al umbral $Q$ o tardanzas frente al l\'imite $l_i$.
+\end{itemize}
+
+Las perturbaciones geom\'etricas (movimientos de b\'usqueda local) operan manipulando \'unicamente el orden de los punteros en los vectores, manteniendo intacta la integridad de la estructura de datos matriz.
+
+% =========================================================
+\section{Descripci\'on del Algoritmo}
+% =========================================================
+
+La resoluci\'on del problema se estructur\'o bajo un dise\~no en dos fases: una construcci\'on heur\'istica restrictiva que prioriza la factibilidad temporal, seguida de un proceso de explotaci\'on local intensiva (\textit{Hill Climbing}) basado en gradientes de penalizaci\'on.
+
+\subsection{Fase 1: Construcci\'on Heur\'istica Sensible al Tiempo}
+
+A diferencia de un enfoque voraz est\'andar que prioriza la compacidad espacial o la saturaci\'on de capacidad, la soluci\'on inicial se construye integrando la viabilidad de las ventanas de tiempo como criterio principal de inserci\'on. Los clientes se ordenan previamente de forma ascendente seg\'un el l\'imite superior de su ventana ($l_i$), garantizando que los nodos con urgencia cr\'itica se ruteen primero.
+
+El algoritmo intenta insertar secuencialmente al cliente en el primer veh\'iculo disponible, sujeto a dos validaciones estrictas: el l\'imite de capacidad no debe ser superado, y la inserci\'on no debe generar tardanza en la ruta en construcci\'on (\texttt{eval\_test.tardanza\_total == 0}). Si no existe un veh\'iculo que satisfaga estas condiciones, el sistema recurre a un mecanismo de \textit{fallback}, insertando al cliente en la ruta que genere el menor incremento marginal en la Funci\'on Objetivo. Esta l\'ogica asegura una topolog\'ia inicial con alta proporci\'on de nodos factibles.
+
+\subsection{Fase 2: Hill Climbing con Best Improvement e Inter-Ruta}
+
+La optimizaci\'on aplica un esquema de \textit{Hill Climbing} (HC) determinista sobre la soluci\'on inicial. Se implementa una estrategia de \textbf{Best Improvement}, la cual explora exhaustivamente toda la vecindad intra-ruta disponible (generada por un operador espec\'ifico) para encontrar el movimiento que produzca la mayor reducci\'on en la funci\'on objetivo ($\Delta < 0$). 
+
+El ciclo de HC converge cuando no se detectan movimientos que reduzcan la FO. Tras alcanzar este \'optimo local intra-ruta, el algoritmo aplica de manera iterativa un operador \textbf{Inter-Ruta} (\texttt{relocate\_inter\_ruta}), dise\~nado para trasladar clientes problem\'aticos entre diferentes veh\'iculos. Este operador act\'ua como un embudo algor\'itmico, destrabando configuraciones sub\'optimas que los operadores internos no pueden resolver por carecer de movilidad entre vectores.
+
+\subsection{Funci\'on de Evaluaci\'on con Gradiente Proporcional}
+
+Para evitar el estancamiento de la b\'usqueda local en zonas topol\'ogicas planas (com\'un en esquemas de penalizaci\'on binaria o multiplicadores fijos), se dise\~n\'o una funci\'on objetivo estructurada sobre penalizaciones proporcionales a la magnitud de la violaci\'on:
+
+\begin{equation}
+Z = \text{distancia\_total} + 100.0 \cdot \sum \max(0, T_{ik} - l_i) + 500.0 \cdot \max(0, C_k - Q)
+\end{equation}
+
+Este gradiente continuo permite que el algoritmo detecte y ejecute perturbaciones que, si bien no logran la factibilidad inmediata, reducen la magnitud del error log\'istico, guiando matem\'aticamente la b\'usqueda hacia la zona factible.
+
+\subsection{Operadores de Vecindad Intra-Ruta}
+
+El modelo implementa tres operadores topol\'ogicos, evaluados de manera independiente:
+\begin{itemize}
+\item \textbf{Swap ($O(N^2)$):} Intercambia la secuencia de visita de dos clientes. Efectivo para corregir inversiones locales de precedencia.
+\item \textbf{Relocate ($O(N^2)$):} Extrae un nodo de su \'indice actual y lo reinserta en cualquier otra posici\'on de la ruta. Su alto \'indice de movilidad lo hace superior en la resoluci\'on de restricciones temporales complejas.
+\item \textbf{2-Opt ($O(N^2)$):} Invierte el subsegmento comprendido entre dos nodos. Fundamental para eliminar cruces geom\'etricos en instacias con alta densidad espacial.
+\end{itemize}
+
+% =========================================================
+\section{Experimentos}
+% =========================================================
+
+\subsection{Instancias de Validaci\'on}
+
+Los ensayos computacionales se ejecutaron sobre un subconjunto truncado a 25 nodos de las instancias est\'andar de Solomon~\cite{solomon1987algorithms}. Esta reducci\'on dimensional permite aislar el comportamiento l\'ogico de los operadores frente a distintas topograf\'ias, minimizando el ruido introducido por la profundidad combinatoria. 
+
+\begin{itemize}
+\item \textbf{C101 (Clustered):} 25 clientes, 3 veh\'iculos, $Q = 200$. Nodos estrictamente agrupados con ventanas de tiempo r\'igidas.
+\item \textbf{R201 (Random):} 25 clientes, 1 veh\'iculo, $Q = 1000$. Distribuci\'on espacial aleatoria con ventanas de tiempo holgadas, lo que maximiza la longitud de las rutas.
+\item \textbf{RC101 (Random-Clustered):} 25 clientes, 3 veh\'iculos, $Q = 200$. Escenario h\'ibrido que combina n\'ucleos de alta densidad con entregas aisladas.
+\end{itemize}
+
+\subsection{Protocolo Experimental}
+
+Dada la naturaleza determinista del \textit{Hill Climbing} implementado, no se requiere experimentaci\'on estoc\'astica ni calibraci\'on de hiperpar\'ametros probabil\'isticos. El l\'imite m\'aximo de iteraciones se estableci\'o en 1000 para evitar interrupciones prematuras.
+El protocolo consisti\'o en generar una soluci\'on constructiva \'unica por instancia, la cual fue clonada y sometida de forma independiente a la optimizaci\'on por los operadores Swap, Relocate y 2-Opt. Finalizada la b\'usqueda intra-ruta, se ejecut\'o el paso Inter-Ruta para depuraci\'on final. Se registr\'o el valor de FO, distancia, violaciones de restricciones y el tiempo de c\'omputo en milisegundos mediante la librer\'ia est\'andar de C++.
+
+% =========================================================
+\section{Resultados}
+% =========================================================
+
+\subsection{S\'intesis Num\'erica}
+
+Las Tablas~\ref{tab:C101}, \ref{tab:R201} y \ref{tab:RC101} exponen el rendimiento terminal de los algoritmos de b\'usqueda local. Es imperativo destacar que, para las tres instancias y bajo todos los operadores, \textbf{la Funci\'on Objetivo igual\'o de forma exacta a la Distancia Total}, confirmando que las penalizaciones fueron reducidas a cero y evidenciando un $100\%$ de factibilidad operativa.
+
+\begin{table}[h!]
+\centering
+\caption{Resultados instancia \texttt{C101} (25 nodos, FO Inicial: 500.73)}
+\label{tab:C101}
+\begin{tabular}{lrrrrc}
+\toprule
+\textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
+\midrule
+Swap     & 198.82 & 198.82 & 0.00 & 0 \\
+Relocate & 198.82 & 198.82 & 0.00 & 0 \\
+2-Opt    & 198.82 & 198.82 & 0.00 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Resultados instancia \texttt{R201} (25 nodos, FO Inicial: 848.22)}
+\label{tab:R201}
+\begin{tabular}{lrrrrc}
+\toprule
+\textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
+\midrule
+Swap     & 575.64 & 575.64 & 0.00 & 0 \\
+\textbf{Relocate}& \textbf{495.94} & \textbf{495.94} & \textbf{0.00} & \textbf{0} \\
+2-Opt    & 575.64 & 575.64 & 0.00 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Resultados instancia \texttt{RC101} (25 nodos, FO Inicial: 651.70)}
+\label{tab:RC101}
+\begin{tabular}{lrrrrc}
+\toprule
+\textbf{Operador} & \textbf{FO Final} & \textbf{Distancia} & \textbf{Tiempo C\'omp. (s)} & \textbf{Violaciones} \\
+\midrule
+Swap     & 475.33 & 475.33 & 0.00 & 0 \\
+Relocate & 475.33 & 475.33 & 0.00 & 0 \\
+2-Opt    & 475.33 & 475.33 & 0.00 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{An\'alisis T\'ecnico}
+
+\textbf{El Efecto Embudo en C101 y RC101:} Los resultados evidencian una convergencia id\'entica (198.82 y 475.33 respectivamente) independientemente del operador inicial utilizado. Este comportamiento es resultado del dise\~no arquitect\'onico del \textit{main}, donde la instrucci\'on \texttt{while (relocate\_inter\_ruta(...))} act\'ua como un mecanismo post-procesador. Las topolog\'ias \textit{Clustered} poseen ventanas de tiempo altamente r\'igidas, las cuales obligan a los operadores intra-ruta a detenerse en \'optimos locales tempranos. Posteriormente, el algoritmo de extracci\'on inter-ruta arrastra las tres configuraciones (previamente optimizadas por Swap, Relocate y 2-Opt) hacia el mismo "sumidero" geom\'etrico, anulando las variaciones preliminares.
+
+\textbf{Superioridad del Operador en R201:} La instancia de distribuci\'on puramente aleatoria (R201) es la \'unica que permiti\'o evadir el efecto embudo. Al operar con un \'unico veh\'iculo ($Q=1000$), la heur\'istica inter-ruta queda invalidada, exponiendo el rendimiento real de la mec\'anica intra-ruta. Aqu\'i, Relocate demostr\'o una superioridad aplastante, comprimiendo la distancia a 495.94 unidades, frente a los 575.64 de Swap y 2-Opt. En una distribuci\'on entr\'opica con ventanas holgadas, el intercambio est\'atico de posiciones vecinas es ineficaz; se requiere la flexibilidad del Relocate para extirpar nodos de ra\'iz e inyectarlos en secuencias l\'ogicas distintas.
+
+\textbf{Tiempos de C\'omputo y Complejidad:} La ejecuci\'on se resolvi\'o de manera instant\'anea ($\leq 0.00$s) en todos los frentes. Este fen\'omeno se explica por el tama\~no reducido de las instancias ($N=25$) acoplado al nivel m\'aximo de optimizaci\'on en la compilaci\'on (\texttt{-O3} en g++). Sin embargo, bajo el cap\'o anal\'itico, el dise\~no posee una fuerte dependencia a la fuerza bruta del procesador que enmascara la complejidad temporal real de las evaluaciones.
+
+\section{Conclusiones}
+
+La resoluci\'on del MDVRP-TW a trav\'es de una arquitectura \textit{Hill Climbing} de dos fases logr\'o un nivel de eficiencia emp\'irica indiscutible sobre las instancias evaluadas. La transici\'on desde un esquema de penalizaciones est\'atico hacia una Funci\'on Objetivo basada en el castigo proporcional de la magnitud de la tardanza prob\'o ser la clave matem\'atica del modelo, otorg\'andole al algoritmo un gradiente continuo indispensable para navegar un espacio de b\'usqueda fuertemente restringido. Este dise\~no logr\'o reducir la infactibilidad temporal a cero en todas las simulaciones operativas.
+
+El an\'alisis topol\'ogico demuestra que el comportamiento geom\'etrico de las redes log\'isticas dicta el rendimiento del operador heur\'istico. En ecosistemas aleatorios con amplios m\'argenes de operaci\'on, las t\'ecnicas de reubicaci\'on agresiva (Relocate) dominan la optimizaci\'on de trayectorias. Por el contrario, en escenarios aglomerados, la rigidez de las ventanas temporales provoca que la b\'usqueda local sea absorbida r\'apidamente por sumideros locales, requiriendo operadores inter-ruta como \'unica v\'ia de escape topol\'ogica.
+
+Desde un punto de vista cr\'itico y anal\'itico, es imperativo se\~nalar que el \'exito operativo en tiempos de $\approx 0.00$s es consecuencia directa de la reducci\'on dimensional del grafo ($N=25$) y de las capacidades del hardware actual. El dise\~no algor\'itmico presente carece de una implementaci\'on de Evaluaci\'on Delta. Actualmente, cada perturbaci\'on clona la ruta en memoria y recalcula las distancias desde el dep\'osito en $O(N)$, elevando la exploraci\'on del vecindario a un costo t\'ecnico de $O(N^3)$. A nivel de escala industrial, con redes log\'isticas de 500 o 1000 nodos, este enfoque es computacionalmente inviable. 
+
+En conclusi\'on, si bien el modelo desarrollado cumple exitosamente con los requisitos funcionales del VRPTW, el pr\'oximo hito tecnol\'ogico para garantizar la escalabilidad industrial debe ser obligatoriamente la transici\'on matem\'atica hacia evaluaciones de impacto local ($\Delta_{movimiento}$) en tiempo constante $O(1)$. 
+
+\section{Uso LLMs}
+
+\begin{enumerate}
+\item \textbf{Herramienta utilizada:} Gemini (Modelo Gemini 2.0 Flash), plan Paid/Pro.
+
+\item \textbf{Prop\'osito de uso:} B\'usqueda y localizaci\'on de material bibliogr\'afico dif\'icil de hallar, traducci\'on t\'ecnica de \textit{abstracts}, correcci\'on de estilo para evitar plagio y asistencia en el formato de c\'odigo LaTeX.
+
+\item \textbf{Prompts relevantes:}
+\begin{itemize}
+\item ``Mi ayudante gu\'ia me dio esta referencia recomendada, pero no puedo encontrarla, ?`existe alguna p\'agina para hallarla?''
+\item ``?`C\'omo cito esto si es el abstract de un paper de 1959?''
+\item ``Ayuda con la escritura de f\'ormulas matem\'aticas de lenguaje matem\'atico a LaTeX.''.
+\end{itemize}
+
+\item \textbf{Intervenci\'on:} El modelo proporcion\'o los datos faltantes de las referencias (volumen, n\'umero, p\'aginas) y sugiri\'o estructuras de p\'arrafos. Se utiliz\'o la IA como un colaborador para agilizar la b\'usqueda de informaci\'on y resolver errores de compilaci\'on de \textit{Latexmk}. Traducci\'on de modelos matem\'aticos desde lenguaje natural y descripciones t\'ecnicas a sintaxis de \textit{LaTeX}.
+
+\item \textbf{Validaci\'on:} Toda la informaci\'on entregada por la IA fue contrastada directamente con la base de datos de \textit{IEEE Xplore} y la \textit{Biblioteca Digital UTFSM}. Las f\'ormulas y conceptos NP-Hard fueron validados con los apuntes de la asignatura y la bibliograf\'ia oficial del curso.
+\end{enumerate}
+
+\bibliographystyle{plain}
+\bibliography{Referencias}
+
+\end{document}
