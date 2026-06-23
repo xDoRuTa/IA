@@ -17,7 +17,6 @@ struct Node {
     string id;
     double x, y, demand, e_i, l_i, s_i;
     bool is_depot;
-    
     Node(string _id, double _x, double _y, double _d, double _e, double _l, double _s, bool _is_depot)
         : id(_id), x(_x), y(_y), demand(_d), e_i(_e), l_i(_l), s_i(_s), is_depot(_is_depot) {}
 };
@@ -42,10 +41,21 @@ struct EvalResult {
 
 typedef map<string, vector<vector<Node*>>> Solucion;
 
+/**
+ * Calcula la distancia euclidiana entre dos nodos.
+ * @param n1 Primer nodo.
+ * @param n2 Segundo nodo.
+ * @return Distancia entre ambos nodos.
+ */
 double calcular_distancia(const Node* n1, const Node* n2) {
     return std::hypot(n1->x - n2->x, n1->y - n2->y);
 }
 
+/**
+ * Evalúa una ruta considerando distancia recorrida,
+ * ventanas de tiempo y restricciones de capacidad.
+ * Registra penalizaciones por tardanza o exceso de carga.
+ */
 EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double capacidad, double v = 1.0) {
     EvalResult res = {0.0, 0.0, 0.0, 0.0, 0.0, {}};
     const Node* nodo_actual = deposito;
@@ -67,7 +77,6 @@ EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double 
         } else {
             res.tiempo = llegada;
         }
-        
         res.tiempo += cliente->s_i;
         res.carga += cliente->demand;
         nodo_actual = cliente;
@@ -82,7 +91,6 @@ EvalResult evaluar_ruta(const vector<Node*>& ruta, const Node* deposito, double 
         Penalty p = {"CAPACIDAD", 0.0, 0.0, 0.0, 0.0, res.exceso_carga, true};
         res.penalizaciones.push_back(p);
     }
-    
     return res;
 }
 
@@ -154,6 +162,12 @@ void leer_instancia(const string& ruta_archivo, vector<Node*>& depots, vector<No
     file.close();
 }
 
+/**
+ * Genera una solución inicial mediante una heurística greedy.
+ * Los clientes son asignados a depósitos y vehículos
+ * intentando minimizar penalizaciones por ventanas de tiempo
+ * y capacidad.
+ */
 Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vector<Node*>& clientes, int num_vehiculos, double capacidad) {
     vector<Node*> clientes_ordenados = clientes;
 
@@ -185,11 +199,9 @@ Solucion generar_solucion_inicial_greedy(const vector<Node*>& depots, const vect
             if (asignado) break;
             for (int v = 0; v < num_vehiculos; ++v) {
                 if (cargas[d->id][v] + cliente->demand > capacidad) continue;
-
                 vector<Node*> ruta_test = solucion[d->id][v];
                 ruta_test.push_back(cliente);
                 EvalResult eval_test = evaluar_ruta(ruta_test, d, capacidad);
-
                 bool sin_tardanza = (eval_test.tardanza_total == 0.0);
                 if (sin_tardanza) {
                     solucion[d->id][v].push_back(cliente);
@@ -244,7 +256,6 @@ void escribir_solucion(const string& ruta_salida, int semilla, double tiempo_com
     for (const Node* d : depots) {
         auto it = solucion.find(d->id);
         if (it == solucion.end()) continue;
-
         const auto& rutas = it->second;
         for (size_t v_idx = 0; v_idx < rutas.size(); ++v_idx) {
             const auto& ruta = rutas[v_idx];
@@ -320,6 +331,9 @@ void escribir_solucion(const string& ruta_salida, int semilla, double tiempo_com
 
 enum TipoMovimiento { SWAP, RELOCATE, DOS_OPT };
 
+/**
+ * Aplica búsqueda local tipo Hill Climbing utilizando movimientos SWAP, RELOCATE o 2-OPT para mejorar la función objetivo.
+ */
 void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Node*>& depots, double capacidad, TipoMovimiento mov) {
     fo_actual = calcular_fo_total(solucion_actual, depots, capacidad);
     bool mejora = true;
@@ -332,7 +346,6 @@ void optimizar_hc(Solucion& solucion_actual, double& fo_actual, const vector<Nod
         string mejor_d_id = "";
         int mejor_v_idx = -1;
         vector<Node*> mejor_ruta_encontrada;
-
         for (const Node* d : depots) {
             auto& rutas = solucion_actual[d->id];
             for (size_t v_idx = 0; v_idx < rutas.size(); ++v_idx) {
@@ -447,6 +460,9 @@ bool relocate_inter_ruta(Solucion& solucion, double& fo_actual, const vector<Nod
     return false;
 }
 
+/**
+ * Ejecucion principal de este codiguito horrible :)
+ */
 int main() {
     std::filesystem::create_directories("outputs");
     vector<string> instancias = {"C101.txt", "R201.txt", "RC101.txt"};
@@ -505,10 +521,8 @@ int main() {
         } catch (const exception& e) {
             cerr << e.what() << "\n\n";
         }
-
         for (Node* d : depots) delete d;
         for (Node* c : clientes) delete c;
     }
-
     return 0;
 }
